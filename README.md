@@ -133,17 +133,17 @@ Enable for your target platform (Oculus, etc.)
 
 ## 🧪 Testing
 
-Unit Testing: Test coverage for core modeling operations
-Integration Testing: Testing feature interactions
-User Testing: Feedback from professional 3D modelers and VR users
-Performance Testing: Frame rate optimization and memory usage
+- **Unit Testing:** Test coverage for core modeling operations
+- **Integration Testing:** Testing feature interactions
+- **User Testing:** Feedback from professional 3D modelers and VR users
+- **Performance Testing:** Frame rate optimization and memory usage
 
 ## 📚 Documentation
 
-User Guide: End-user documentation
-Developer Guide: Technical documentation
-API Reference: Scripting interfaces
-Feature Specifications: Detailed feature descriptions
+- **User Guide:** End-user documentation
+- **Developer Guide:** Technical documentation
+- **API Reference:** Scripting interfaces
+- **Feature Specifications:** Detailed feature descriptions
 
 ## 🤝 Contributions
 
