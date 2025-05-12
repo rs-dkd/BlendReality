@@ -156,10 +156,8 @@ Update documentation for any changes
 
 ## 👥 Team
 
-### [Lead Developer]
-- Reggie Segovia
-
 ### [Developers]
+- Reggie Segovia (Project Lead)
 - Michael Termotto
 - Guanyu Chen
 
