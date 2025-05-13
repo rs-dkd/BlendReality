@@ -60,7 +60,7 @@ BlenderVR is an immersive virtual reality application that brings professional 3
 
 1. Clone the repository with Git:
    ```bash
-   git clone https://github.com/YourUsername/BlenderVR.git
+   git clone https://github.com/rs-dkd/BlenderVR
 
 Open the project in Unity:
 
