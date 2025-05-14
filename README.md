@@ -1,4 +1,4 @@
-# BlenderVR
+# BlendReality
  
 <p align="center">
   <br>
@@ -7,7 +7,7 @@
 
 ## 🌟 Overview
 
-BlenderVR is an immersive virtual reality application that brings professional 3D modeling capabilities into VR. Inspired by Blender's powerful feature set, BlenderVR allows direct manipulation of 3D objects in virtual space, making complex modeling operations more intuitive while maintaining the precision and capability of desktop modeling software.
+BlendReality is an immersive virtual reality application that brings professional 3D modeling capabilities into VR. Inspired by Blender's powerful feature set, BlendReality allows direct manipulation of 3D objects in virtual space, making complex modeling operations more intuitive while maintaining the precision and capability of desktop modeling software.
 
 ### 🎯 Project Objectives
 
@@ -60,7 +60,7 @@ BlenderVR is an immersive virtual reality application that brings professional 3
 
 1. Clone the repository with Git:
    ```bash
-   git clone https://github.com/rs-dkd/BlenderVR
+   git clone https://github.com/rs-dkd/BlendReality
 
 Open the project in Unity:
 
@@ -86,7 +86,7 @@ Enable for your target platform (Oculus, etc.)
 
 ### Project Structure
 
-- **/BlenderVR**
+- **/BlendReality**
   - **/Assets/**
     - **/Scripts/** - C# scripts organized by feature
     - **/Prefabs/** - Reusable VR components
@@ -162,4 +162,4 @@ Update documentation for any changes
 - Guanyu Chen
 
 ## 📞 Contact
-For questions or feedback about BlenderVR, please open an issue on this repository or contact me at [rdavidsegovia@gmail.com/reggie.segovia@ufl.edu].
+For questions or feedback about BlendReality, please open an issue on this repository or contact me at [rdavidsegovia@gmail.com/reggie.segovia@ufl.edu].
