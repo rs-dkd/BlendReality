@@ -32,7 +32,6 @@ public class AxisIndicators : MonoBehaviour
         line.SetPosition(0, Vector3.zero);
         line.SetPosition(1, direction * axisLength);
 
-        // Optional: Add cone at the end for arrow
         GameObject cone = CreateCone(color);
         cone.transform.SetParent(axisObj.transform);
         cone.transform.localPosition = direction * axisLength;
