@@ -1,0 +1,34 @@
+{
+    "name": "PlayerInputActions",
+    "maps": [
+        {
+            "name": "Player",
+            "id": "58834d04-a9cb-4b2d-b1ed-a9a866d5ed3e",
+            "actions": [
+                {
+                    "name": "RadialMenuActivate",
+                    "type": "Button",
+                    "id": "4bb76fe1-0cf8-4951-8fd8-8b5bb5d4fcb2",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "411032d1-6e91-414b-b6ac-97eaf16c0d06",
+                    "path": "<XRController>{RightHand}/{PrimaryButton}",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RadialMenuActivate",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
