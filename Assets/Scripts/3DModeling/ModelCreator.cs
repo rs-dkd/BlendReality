@@ -25,8 +25,13 @@ public class ModelCreator : MonoBehaviour
     }
     public void CreateModel(string type)
     {
-        FinalizeLastModel();
-
+        //FinalizeLastModel();
+        if (currentModel != null)
+        {
+            SelectionManager.Instance.RemoveModelFromSelection(currentModel);
+            currentModel.DeleteModel();
+            currentModel = null;
+        }
 
         ProBuilderMesh mesh = null;
         if (Enum.TryParse(type, out ShapeType shapeType))
@@ -45,7 +50,7 @@ public class ModelCreator : MonoBehaviour
         currentModel = mesh.gameObject.AddComponent<ModelData>();
 
         currentModel.SetupModel(mesh);
-        currentModel.SetPosition(new Vector3(0, 1, -1));
+        currentModel.SetPosition(new Vector3(0, 1, 2));
         SizeSliderUpdated();
         SelectionManager.Instance.SelectModel(currentModel);
     }

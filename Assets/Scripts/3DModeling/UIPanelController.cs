@@ -32,7 +32,7 @@ public class UIPanelController : MonoBehaviour
         if (useDirectInputAction)
         {
             menuAction = new InputAction("MenuButton", InputActionType.Button);
-            menuAction.AddBinding("<XRController>{LeftHand}/menuButton");
+            menuAction.AddBinding("<XRController>{LeftHand}/primaryButton");
             menuAction.Enable();
             menuAction.performed += OnMenuButtonPressed;
         }
