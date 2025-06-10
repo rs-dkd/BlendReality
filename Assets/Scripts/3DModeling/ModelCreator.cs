@@ -1,14 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using UnityEngine.ProBuilder.Shapes;
 using UnityEngine.UI;
+using TMPro;
 
-public class ModelCreator : MonoBehaviour
+public class EnhancedModelCreator : MonoBehaviour
 {
     [Header("Current Model")]
     public ModelData currentModel;
@@ -18,9 +18,127 @@ public class ModelCreator : MonoBehaviour
     public Slider sizeSlider;
     public Slider subDivisionSlider;
 
+    [Header("Imported Objects UI")]
+    public TMP_Dropdown importedObjectsDropdown;
+    public Button createImportedObjectButton;
+    public TMP_Text importedObjectsCountText;
+
     [Header("Bezier Surface System")]
     public BezierSurfaceManager bezierManager;
     private BezierSurface currentBezierSurface;
+
+    void Start()
+    {
+        SetupImportedObjectsUI();
+        RefreshImportedObjectsList();
+    }
+
+    private void SetupImportedObjectsUI()
+    {
+        if (createImportedObjectButton != null)
+        {
+            createImportedObjectButton.onClick.AddListener(CreateSelectedImportedObject);
+        }
+
+        if (importedObjectsDropdown != null)
+        {
+            importedObjectsDropdown.onValueChanged.AddListener(OnImportedObjectDropdownChanged);
+        }
+    }
+
+    public void RefreshImportedObjectsList()
+    {
+        Debug.Log("RefreshImportedObjectsList called");
+
+        if (OBJImportHandler.Instance == null)
+        {
+            Debug.Log("OBJImportHandler.Instance is null");
+            UpdateImportedObjectsUI(new List<string>(), 0);
+            return;
+        }
+
+        List<string> importedNames = OBJImportHandler.Instance.GetImportedObjectNames();
+        int count = OBJImportHandler.Instance.GetImportedObjectCount();
+
+        Debug.Log($"Found {count} imported objects: {string.Join(", ", importedNames)}");
+
+        UpdateImportedObjectsUI(importedNames, count);
+    }
+
+    private void UpdateImportedObjectsUI(List<string> objectNames, int count)
+    {
+        if (importedObjectsDropdown != null)
+        {
+            importedObjectsDropdown.ClearOptions();
+
+            if (objectNames.Count > 0)
+            {
+                List<TMP_Dropdown.OptionData> options = new List<TMP_Dropdown.OptionData>();
+                foreach (string name in objectNames)
+                {
+                    options.Add(new TMP_Dropdown.OptionData(name));
+                }
+                importedObjectsDropdown.AddOptions(options);
+                importedObjectsDropdown.interactable = true;
+            }
+            else
+            {
+                importedObjectsDropdown.AddOptions(new List<string> { "No imported objects" });
+                importedObjectsDropdown.interactable = false;
+            }
+        }
+
+        if (createImportedObjectButton != null)
+        {
+            createImportedObjectButton.interactable = count > 0;
+        }
+
+        if (importedObjectsCountText != null)
+        {
+            importedObjectsCountText.text = $"Imported Objects: {count}";
+        }
+    }
+
+    private void OnImportedObjectDropdownChanged(int index)
+    {
+        Debug.Log($"Selected imported object index: {index}");
+    }
+
+    public void CreateSelectedImportedObject()
+    {
+        if (OBJImportHandler.Instance == null)
+        {
+            Debug.LogError("OBJImportHandler not found!");
+            return;
+        }
+
+        if (importedObjectsDropdown == null || importedObjectsDropdown.options.Count == 0)
+        {
+            Debug.LogError("No imported objects available!");
+            return;
+        }
+        FinalizeLastModel();
+
+        // Create selected imported obj
+        int selectedIndex = importedObjectsDropdown.value;
+        ModelData newModel = OBJImportHandler.Instance.CreateImportedObject(selectedIndex);
+
+        if (newModel != null)
+        {
+            currentModel = newModel;
+            if (sizeSlider != null)
+            {
+                SizeSliderUpdated();
+            }
+            SelectionManager.Instance.SelectModel(currentModel);
+
+            Debug.Log($"Created imported object: {importedObjectsDropdown.options[selectedIndex].text}");
+        }
+        else
+        {
+            Debug.LogError("Failed to create imported object!");
+        }
+    }
 
     public void FinalizeLastModel()
     {
@@ -180,4 +298,30 @@ public class ModelCreator : MonoBehaviour
     public void CreateBezierFlat() => CreateBezierSurface("flat");
     public void CreateBezierDome() => CreateBezierSurface("dome");
     public void CreateBezierWavy() => CreateBezierSurface("wavy");
+
+    // Refresh imported objs
+    public void OnImportedObjectsChanged()
+    {
+        Debug.Log("OnImportedObjectsChanged called");
+        RefreshImportedObjectsList();
+    }
+
+    [ContextMenu("Debug Model Creator")]
+    public void DebugModelCreator()
+    {
+        Debug.Log("=== MODEL CREATOR DEBUG ===");
+        Debug.Log($"importedObjectsDropdown: {(importedObjectsDropdown != null ? "Assigned" : "NULL")}");
+        Debug.Log($"createImportedObjectButton: {(createImportedObjectButton != null ? "Assigned" : "NULL")}");
+        Debug.Log($"importedObjectsCountText: {(importedObjectsCountText != null ? "Assigned" : "NULL")}");
+
+        if (OBJImportHandler.Instance != null)
+        {
+            Debug.Log($"OBJImportHandler found with {OBJImportHandler.Instance.GetImportedObjectCount()} objects");
+        }
+        else
+        {
+            Debug.Log("OBJImportHandler.Instance is NULL");
+        }
+        Debug.Log("===========================");
+    }
 }

@@ -60,9 +60,18 @@ public class ModelData : MonoBehaviour
 
     public void FinalizeEditModel()
     {
-        UpdateStats(editingModel.faceCount, editingModel.edgeCount, editingModel.vertexCount);
-        editingModel.ToMesh();
-        editingModel.Refresh();
+        try
+        {
+            UpdateStats(editingModel.faceCount, editingModel.edgeCount, editingModel.vertexCount);
+            editingModel.ToMesh();
+            Debug.Log("Model finalized successfully without refresh");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"Error finalizing model, skipping refresh: {e.Message}");
+            UpdateStats(editingModel.faceCount, editingModel.edgeCount, editingModel.vertexCount);
+            editingModel.ToMesh();
+        }
     }
     public void SetupModel(ProBuilderMesh _editingModel)
     {

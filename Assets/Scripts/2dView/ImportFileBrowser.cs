@@ -11,48 +11,58 @@ public class ImportFileBrowser : MonoBehaviour
     private const string RecentPathsKey = "RecentOBJPaths";
     private const int MaxRecent = 10;
 
-    [SerializeField] private ObjLoader objLoader;
-
+    [Header("UI Controls - File Selection")]
     [SerializeField] private TMP_Dropdown fileDropdown;
     [SerializeField] private TMP_Text currentLoadPath;
     [SerializeField] private Button loadBlenderButton;
+
+    [Header("UI Controls - Import Settings")]
+    [SerializeField] private Toggle combineMeshesToggle;
+
+    [Header("Import Settings")]
+    private Vector3 defaultPosition = new Vector3(0, 1, 2);
 
     private List<string> filePaths = new List<string>();
 
     void Start()
     {
-        // loading local pref
+        LoadRecentPaths();
+        SetupFileBrowser();
+        SetupUI();
+        RefreshDropdown();
+        UpdateLoadButton();
+    }
+
+    private void LoadRecentPaths()
+    {
         if (PlayerPrefs.HasKey(RecentPathsKey))
         {
             string saved = PlayerPrefs.GetString(RecentPathsKey);
-            foreach (var entry in saved.Split('|'))
+            string[] paths = saved.Split('|');
+            foreach (string entry in paths)
             {
-                if (!string.IsNullOrEmpty(entry))
+                if (!string.IsNullOrEmpty(entry) && File.Exists(entry))
                     filePaths.Add(entry);
             }
         }
+    }
 
-        RefreshDropdown();
-
-        //filter to be obj
-        FileBrowser.SetFilters(true, new FileBrowser.Filter("Models", ".obj"));
+    private void SetupFileBrowser()
+    {
+        FileBrowser.SetFilters(true, new FileBrowser.Filter("3D Models", ".obj"));
         FileBrowser.SetDefaultFilter(".obj");
         FileBrowser.AddQuickLink("Users", "C:\\Users", null);
+    }
 
-        fileDropdown.onValueChanged.AddListener(OnDropdownChanged);
+    private void SetupUI()
+    {
+        // Dropdown
+        if (fileDropdown != null)
+            fileDropdown.onValueChanged.AddListener(OnDropdownChanged);
 
-        if (filePaths.Count > 0)
-        {
-            fileDropdown.value = 0;
-            currentLoadPath.text = "currentpath: " + filePaths[0];
-            Debug.Log(filePaths[0]);
-            loadBlenderButton.interactable = true;
-        }
-        else
-        {
-            currentLoadPath.text = "currentpath: (none)";
-            loadBlenderButton.interactable = false;
-        }
+        // Combine mesh toggle
+        if (combineMeshesToggle != null)
+            combineMeshesToggle.onValueChanged.AddListener(OnCombineMeshesChanged);
     }
 
     public void OnPickFilesButton()
@@ -61,91 +71,140 @@ public class ImportFileBrowser : MonoBehaviour
             (paths) =>
             {
                 string fullPath = paths[0];
-                if (!fullPath.ToLower().EndsWith(".obj")) return;
+                if (!fullPath.ToLower().EndsWith(".obj"))
+                {
+                    Debug.LogWarning("Selected file is not an OBJ file");
+                    return;
+                }
 
-                if (filePaths.Contains(fullPath))
-                    filePaths.Remove(fullPath);
-                filePaths.Insert(0, fullPath);
-
-                if (filePaths.Count > MaxRecent)
-                    filePaths.RemoveRange(MaxRecent, filePaths.Count - MaxRecent);
-
+                AddToRecentPaths(fullPath);
                 RefreshDropdown();
+                SaveRecentPaths();
 
-                PlayerPrefs.SetString(RecentPathsKey, string.Join("|", filePaths));
-                PlayerPrefs.Save();
+                if (fileDropdown != null)
+                {
+                    fileDropdown.value = 0;
+                }
+                UpdateCurrentPathDisplay();
+                UpdateLoadButton();
 
-                fileDropdown.value = 0;
-                currentLoadPath.text = "currentpath: " + filePaths[0];
-                loadBlenderButton.interactable = true;
-
-                Debug.Log("Added: " + fullPath);
+                Debug.Log("Added to import list: " + Path.GetFileName(fullPath));
             },
-            () => { Debug.Log("User canceled"); },
+            () => { Debug.Log("File selection canceled"); },
             FileBrowser.PickMode.Files,
             false,
             null,
-            "Select Files",
-            "Open"
+            "Select OBJ File",
+            "Select"
         );
+    }
+
+    private void AddToRecentPaths(string fullPath)
+    {
+        if (filePaths.Contains(fullPath))
+            filePaths.Remove(fullPath);
+
+        filePaths.Insert(0, fullPath);
+
+        if (filePaths.Count > MaxRecent)
+            filePaths.RemoveRange(MaxRecent, filePaths.Count - MaxRecent);
+    }
+
+    private void SaveRecentPaths()
+    {
+        PlayerPrefs.SetString(RecentPathsKey, string.Join("|", filePaths.ToArray()));
+        PlayerPrefs.Save();
     }
 
     private void RefreshDropdown()
     {
+        if (fileDropdown == null) return;
+
         fileDropdown.ClearOptions();
-        var options = new List<TMP_Dropdown.OptionData>();
-        foreach (var path in filePaths)
+        List<TMP_Dropdown.OptionData> options = new List<TMP_Dropdown.OptionData>();
+
+        foreach (string path in filePaths)
         {
             string nameOnly = Path.GetFileNameWithoutExtension(path);
             options.Add(new TMP_Dropdown.OptionData(nameOnly));
         }
+
         fileDropdown.AddOptions(options);
         fileDropdown.RefreshShownValue();
     }
 
-    private void OnDropdownChanged(int index)
+    private void UpdateCurrentPathDisplay()
     {
-        if (index < 0 || index >= filePaths.Count) return;
-        currentLoadPath.text = "currentpath: " + filePaths[index];
-        loadBlenderButton.interactable = true;
-    }
+        if (currentLoadPath == null) return;
 
-    public void OnLoadBlenderSceneButton()
-    {
-        int index = fileDropdown.value;
-        if (index < 0 || index >= filePaths.Count) return;
-
-        string objPath = filePaths[index];
-
-        GameObject loaded = objLoader.LoadObjAtRuntime(objPath);
-
-        if (loaded != null)
+        if (filePaths.Count > 0 && fileDropdown != null && fileDropdown.value < filePaths.Count)
         {
-            Debug.Log("OBJ imported");
-
-            //anonymous function because there's no handlers on vr scene
-            SceneManager.sceneLoaded += (scene, mode) =>
-            {
-                GameObject parent = GameObject.Find("LoadedObj");
-                if (parent != null)
-                {
-                    loaded.transform.SetParent(parent.transform, true);
-                    Debug.Log("OBJ loaded");
-                }
-                else
-                {
-                    Debug.LogWarning("cant find LoadedObj");
-                }
-
-                SceneManager.sceneLoaded -= (scene2, mode2) => { };
-            };
-
-            // 切换场景
-            SceneManager.LoadScene("BlenderScene");
+            string selectedPath = filePaths[fileDropdown.value];
+            currentLoadPath.text = "Current: " + Path.GetFileName(selectedPath);
         }
         else
         {
-            Debug.LogError("obj import failed");
+            currentLoadPath.text = "Current: (none selected)";
         }
+    }
+
+    private void UpdateLoadButton()
+    {
+        if (loadBlenderButton == null) return;
+
+        bool canLoad = filePaths.Count > 0 && fileDropdown != null && fileDropdown.value < filePaths.Count;
+        loadBlenderButton.interactable = canLoad;
+    }
+
+    private void OnDropdownChanged(int index)
+    {
+        UpdateCurrentPathDisplay();
+        UpdateLoadButton();
+    }
+
+    private void OnCombineMeshesChanged(bool value)
+    {
+        Debug.Log($"Combine meshes set to: {value}");
+    }
+
+    public void OnLoadModelingSceneButton()
+    {
+        if (fileDropdown == null || filePaths.Count == 0)
+        {
+            Debug.LogError("No valid file selected for import");
+            return;
+        }
+
+        int index = fileDropdown.value;
+        if (index < 0 || index >= filePaths.Count)
+        {
+            Debug.LogError("Invalid file index selected");
+            return;
+        }
+
+        string objPath = filePaths[index];
+
+        if (!File.Exists(objPath))
+        {
+            Debug.LogError($"File not found: {objPath}");
+            return;
+        }
+
+        // Store import data in static var for VR scene
+        OBJImportHandler.PendingImport = new StoredImportData
+        {
+            fileName = Path.GetFileNameWithoutExtension(objPath),
+            filePath = objPath,
+            combineMultipleMeshes = combineMeshesToggle != null ? combineMeshesToggle.isOn : false
+        };
+
+        Debug.Log($"Stored pending import: {OBJImportHandler.PendingImport.fileName}");
+
+        SceneManager.LoadScene("ModelingScene");
+    }
+
+    public void ResetImportSettings()
+    {
+        if (combineMeshesToggle != null) combineMeshesToggle.isOn = false;
     }
 }

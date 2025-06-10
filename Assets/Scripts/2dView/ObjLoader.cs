@@ -3,10 +3,9 @@ using Dummiesman;
 
 public class ObjLoader : MonoBehaviour
 {
-    [Header("Runtime OBJ Loader 配置")]
+    [Header("Runtime OBJ Loader for Import")]
     [Tooltip(".obj file path")]
     public string objFilePath;
-
     [Tooltip(".mtl file path")]
     public string mtlFilePath = "";
 
@@ -23,11 +22,11 @@ public class ObjLoader : MonoBehaviour
         }
     }
 
-    public GameObject LoadObjAtRuntime(string objPath, string mtlPath = "")
+    public GameObject LoadObjForImport(string objPath, string mtlPath = "")
     {
         if (string.IsNullOrEmpty(objPath))
         {
-            Debug.LogError("OBJ is null！");
+            Debug.LogError("OBJ path is null!");
             return null;
         }
 
@@ -44,12 +43,20 @@ public class ObjLoader : MonoBehaviour
         go.transform.position = Vector3.zero;
         go.transform.rotation = Quaternion.identity;
         go.transform.localScale = Vector3.one;
-        go.name = "LoadedObj_" + go.name;
+        go.name = "ImportedObj_" + go.name;
 
         AddMeshCollidersRecursively(go);
 
-        DontDestroyOnLoad(go); //so the thing will not be destroyed
+        return go;
+    }
 
+    public GameObject LoadObjAtRuntime(string objPath, string mtlPath = "")
+    {
+        GameObject go = LoadObjForImport(objPath, mtlPath);
+        if (go != null)
+        {
+            DontDestroyOnLoad(go); // Only relevant for non object import stuff
+        }
         return go;
     }
 }
