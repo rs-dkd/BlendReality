@@ -574,28 +574,28 @@ public class PNSIntegration : MonoBehaviour
         }
     }
 
+
     public void TestPNSWithLowPolySphere()
     {
         try
         {
             Debug.Log("=== Testing PNS with Low-Poly Sphere ===");
 
-            // Attempt at making a sphere
-            int rings = 4;
-            int sectors = 6;
-
+            int rings = 6;
+            int sectors = 8;
             List<float[]> verticesList = new List<float[]>();
 
-            // Gen vertices
-            for (int ring = 0; ring <= rings; ring++)
+            verticesList.Add(new float[] { 0, 1, 0 });
+
+            for (int ring = 1; ring < rings; ring++)
             {
-                float phi = Mathf.PI * ring / rings; // 0 to PI
+                float phi = Mathf.PI * ring / rings;
                 float y = Mathf.Cos(phi);
                 float ringRadius = Mathf.Sin(phi);
 
                 for (int sector = 0; sector < sectors; sector++)
                 {
-                    float theta = 2.0f * Mathf.PI * sector / sectors; // 0 to 2PI
+                    float theta = 2.0f * Mathf.PI * sector / sectors;
                     float x = ringRadius * Mathf.Cos(theta);
                     float z = ringRadius * Mathf.Sin(theta);
 
@@ -603,7 +603,8 @@ public class PNSIntegration : MonoBehaviour
                 }
             }
 
-            // Convert to arr
+            verticesList.Add(new float[] { 0, -1, 0 });
+
             float[,] vertices = new float[verticesList.Count, 3];
             for (int i = 0; i < verticesList.Count; i++)
             {
@@ -612,20 +613,35 @@ public class PNSIntegration : MonoBehaviour
                 vertices[i, 2] = verticesList[i][2];
             }
 
-            // Create quad faces
             List<int[]> facesList = new List<int[]>();
-            for (int ring = 0; ring < rings; ring++)
+
+            for (int sector = 0; sector < sectors; sector++)
+            {
+                int current = 1 + sector;
+                int next = 1 + (sector + 1) % sectors;
+                facesList.Add(new int[] { 0, current, next });
+            }
+
+            for (int ring = 0; ring < rings - 2; ring++)
             {
                 for (int sector = 0; sector < sectors; sector++)
                 {
-                    int current = ring * sectors + sector;
-                    int next = ring * sectors + (sector + 1) % sectors;
-                    int currentNext = (ring + 1) * sectors + sector;
-                    int nextNext = (ring + 1) * sectors + (sector + 1) % sectors;
+                    int current = 1 + ring * sectors + sector;
+                    int next = 1 + ring * sectors + (sector + 1) % sectors;
+                    int currentNext = 1 + (ring + 1) * sectors + sector;
+                    int nextNext = 1 + (ring + 1) * sectors + (sector + 1) % sectors;
 
-                    // Create quad face
-                    facesList.Add(new int[] { current, next, nextNext, currentNext });
+                    facesList.Add(new int[] { current, currentNext, nextNext, next });
                 }
+            }
+
+            int bottomPole = verticesList.Count - 1;
+            int lastRingStart = 1 + (rings - 2) * sectors;
+            for (int sector = 0; sector < sectors; sector++)
+            {
+                int current = lastRingStart + sector;
+                int next = lastRingStart + (sector + 1) % sectors;
+                facesList.Add(new int[] { current, bottomPole, next });
             }
 
             var controlMesh = PNSControlMesh.FromData(vertices, facesList.ToArray());
@@ -747,55 +763,65 @@ public class PNSIntegration : MonoBehaviour
         }
     }
 
-    public void TestPNSWithSharpObject()
+    public void TestPNSWithSimpleCube()
     {
         try
         {
-            Debug.Log("=== Testing PNS with Sharp-Edged Object ===");
+            Debug.Log("=== Testing PNS with Simple Cube ===");
 
-            // Attempt at a diamond/octahedron
             float[,] vertices = new float[,]
             {
-            { 0, 1, 0 },   // top
-            { 1, 0, 0 },   // +X
-            { 0, 0, 1 },   // +Z
-            { -1, 0, 0 },  // -X
-            { 0, 0, -1 },  // -Z
-            { 0, -1, 0 }   // bottom
+            { -1, -1, -1 },
+            {  1, -1, -1 },
+            {  1, -1,  1 },
+            { -1, -1,  1 },
+            { -1,  1, -1 },
+            {  1,  1, -1 },
+            {  1,  1,  1 },
+            { -1,  1,  1 }
             };
 
             List<int[]> facesList = new List<int[]>
         {
-            new int[] { 0, 1, 2 },
-            new int[] { 0, 2, 3 },
-            new int[] { 0, 3, 4 },
-            new int[] { 0, 4, 1 },
-
-            new int[] { 5, 2, 1 },
-            new int[] { 5, 3, 2 },
-            new int[] { 5, 4, 3 },
-            new int[] { 5, 1, 4 },
+            new int[] { 0, 1, 2, 3 }, // bottom
+            new int[] { 4, 7, 6, 5 }, // top
+            new int[] { 0, 4, 5, 1 }, // back
+            new int[] { 2, 6, 7, 3 }, // front
+            new int[] { 0, 3, 7, 4 }, // left
+            new int[] { 1, 5, 6, 2 }  // right
         };
 
             var controlMesh = PNSControlMesh.FromData(vertices, facesList.ToArray());
 
-            string testFilename = $"test_sharp_object_{System.DateTime.Now.Ticks}";
+            string testFilename = $"test_cube_{System.DateTime.Now.Ticks}";
             string outputPath = Path.Combine(exportPath, $"{testFilename}.{exportFormat}");
+
+            Debug.Log($"Attempting to export cube with {vertices.GetLength(0)} vertices and {facesList.Count} faces");
 
             switch (exportFormat.ToLower())
             {
-                case "bv": PNS.CreateBV(controlMesh, outputPath, degreeRaise); break;
-                case "igs": PNS.CreateIGS(controlMesh, outputPath, degreeRaise); break;
-                case "step": PNS.CreateSTEP(controlMesh, outputPath, degreeRaise); break;
+                case "bv":
+                    Debug.Log("Creating BV file...");
+                    PNS.CreateBV(controlMesh, outputPath, degreeRaise);
+                    break;
+                case "igs":
+                    Debug.Log("Creating IGS file...");
+                    PNS.CreateIGS(controlMesh, outputPath, degreeRaise);
+                    break;
+                case "step":
+                    Debug.Log("Creating STEP file...");
+                    PNS.CreateSTEP(controlMesh, outputPath, degreeRaise);
+                    break;
             }
 
-            Debug.Log($"Sharp object exported to: {outputPath}");
+            Debug.Log($"Cube exported to: {outputPath}");
             controlMesh.Dispose();
             DebugGeneratedFile($"{testFilename}.{exportFormat}");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"Sharp object test failed: {e.Message}");
+            Debug.LogError($"Cube test failed: {e.Message}");
+            Debug.LogError($"Stack trace: {e.StackTrace}");
         }
     }
 

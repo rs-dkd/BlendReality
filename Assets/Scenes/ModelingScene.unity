@@ -11811,7 +11811,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1243607676}
         m_TargetAssemblyTypeName: EnhancedModelCreator, Assembly-CSharp
-        m_MethodName: TestPNSWithSharpObject
+        m_MethodName: TestPNSWithFacetedTorus
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

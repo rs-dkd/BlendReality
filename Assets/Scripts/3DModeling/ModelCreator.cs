@@ -493,11 +493,11 @@ public class EnhancedModelCreator : MonoBehaviour
         }
     }
 
-    public void TestPNSWithSharpObject()
+    public void TestPNSWithSimpleCube()
     {
         if (pnsIntegration != null)
         {
-            pnsIntegration.TestPNSWithSharpObject();
+            pnsIntegration.TestPNSWithSimpleCube();
         }
         else
         {
