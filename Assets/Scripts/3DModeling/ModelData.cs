@@ -11,36 +11,33 @@ public class ModelData : MonoBehaviour
     public int faces;
     public int vertices;
     public int edges;
-
-
     private Material originalMaterial;
     private Material overrideMaterial;
-    
 
     public MeshRenderer meshRender;
     public MeshCollider meshCollider;
     public ProBuilderMesh editingModel;
     public Transform trans;
     private bool isSelected;
+
     public void SetPosition(Vector3 pos)
     {
         trans.position = pos;
     }
+
     public void SetScale(Vector3 scale)
     {
         trans.localScale = scale;
     }
+
     public void UpdateMesh(ProBuilderMesh mesh)
     {
         editingModel.Clear();
-
         editingModel.positions = mesh.positions;
         editingModel.faces = mesh.faces;
-
         editingModel.ToMesh();
         editingModel.Refresh();
         UpdateMaterial();
-
     }
 
     public void SelectModel()
@@ -48,11 +45,13 @@ public class ModelData : MonoBehaviour
         isSelected = true;
         UpdateMaterial();
     }
+
     public void UnSelectModel()
     {
         isSelected = false;
         UpdateMaterial();
     }
+
     public ProBuilderMesh GetEditModel()
     {
         return editingModel;
@@ -73,6 +72,7 @@ public class ModelData : MonoBehaviour
             editingModel.ToMesh();
         }
     }
+
     public void SetupModel(ProBuilderMesh _editingModel)
     {
         editingModel = _editingModel;
@@ -82,10 +82,8 @@ public class ModelData : MonoBehaviour
         ModelsManager.Instance.TrackModel(this);
         SetOriginalMaterial(ModelsManager.Instance.GetDefaultMaterial());
         ViewManager.Instance.ChangeViewForModel(this);
-
         Rigidbody rigid = this.AddComponent<Rigidbody>();
         rigid.isKinematic = true;
-
         this.AddComponent<XRGrabInteractable>();
         this.AddComponent<XRGeneralGrabTransformer>();
     }
@@ -95,17 +93,19 @@ public class ModelData : MonoBehaviour
         ModelsManager.Instance.UnTrackModel(this);
         Destroy(this.gameObject);
     }
+
     public void SetOriginalMaterial(Material _material)
     {
         originalMaterial = _material;
-
         UpdateMaterial();
     }
+
     public void SetOverrideMaterial(Material _overrideMaterial)
     {
         overrideMaterial = _overrideMaterial;
         UpdateMaterial();
     }
+
     private void UpdateMaterial()
     {
         List<Material> materials = new List<Material>();
@@ -117,34 +117,31 @@ public class ModelData : MonoBehaviour
         {
             materials.Add(overrideMaterial);
         }
-
         if (isSelected)
         {
             materials.Add(ModelsManager.Instance.GetHighLightMaterial());
         }
-
         meshRender.SetMaterials(materials);
     }
-
     public void UpdateStats(int _faces, int _edges, int _vertices)
     {
         faces = _faces;
         vertices = _vertices;
         edges = _edges;
     }
+
     public int GetFaces()
     {
         return faces;
     }
+
     public int GetEdges()
     {
         return edges;
     }
+
     public int GetVerts()
     {
         return vertices;
     }
-
-
-
 }

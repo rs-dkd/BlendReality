@@ -27,10 +27,51 @@ public class EnhancedModelCreator : MonoBehaviour
     public BezierSurfaceManager bezierManager;
     private BezierSurface currentBezierSurface;
 
+    [Header("PNS Integration")]
+    public PNSIntegration pnsIntegration;
+    public Button convertToPNSButton;
+    public Toggle degreeRaiseToggle;
+    public TMP_Dropdown exportFormatDropdown;
+
     void Start()
     {
         SetupImportedObjectsUI();
+        SetupPNSUI();
         RefreshImportedObjectsList();
+    }
+
+    private void SetupPNSUI()
+    {
+        // Initialize PNS integration if not assigned
+        if (pnsIntegration == null)
+        {
+            pnsIntegration = FindObjectOfType<PNSIntegration>();
+            if (pnsIntegration == null)
+            {
+                GameObject pnsObject = new GameObject("PNS Integration");
+                pnsIntegration = pnsObject.AddComponent<PNSIntegration>();
+                Debug.Log("Created PNSIntegration component");
+            }
+        }
+
+        // Setup PNS UI controls
+        if (convertToPNSButton != null)
+        {
+            convertToPNSButton.onClick.AddListener(ConvertCurrentModelToPNS);
+        }
+
+        if (degreeRaiseToggle != null)
+        {
+            degreeRaiseToggle.onValueChanged.AddListener(OnDegreeRaiseChanged);
+            degreeRaiseToggle.isOn = pnsIntegration.degreeRaise;
+        }
+
+        if (exportFormatDropdown != null)
+        {
+            exportFormatDropdown.ClearOptions();
+            exportFormatDropdown.AddOptions(new List<string> { "bv", "igs", "step" });
+            exportFormatDropdown.onValueChanged.AddListener(OnExportFormatChanged);
+        }
     }
 
     private void SetupImportedObjectsUI()
@@ -131,6 +172,7 @@ public class EnhancedModelCreator : MonoBehaviour
                 SizeSliderUpdated();
             }
             SelectionManager.Instance.SelectModel(currentModel);
+            UpdatePNSButtonState();
 
             Debug.Log($"Created imported object: {importedObjectsDropdown.options[selectedIndex].text}");
         }
@@ -183,8 +225,14 @@ public class EnhancedModelCreator : MonoBehaviour
         currentModel = mesh.gameObject.AddComponent<ModelData>();
         currentModel.SetupModel(mesh);
         currentModel.SetPosition(new Vector3(0, 1, 2));
-        SizeSliderUpdated();
+
+        if (sizeSlider != null)
+        {
+            SizeSliderUpdated();
+        }
+
         SelectionManager.Instance.SelectModel(currentModel);
+        UpdatePNSButtonState();
     }
 
     public void CreateBezierSurface(string surfaceType = "flat")
@@ -212,6 +260,7 @@ public class EnhancedModelCreator : MonoBehaviour
         //Create Bezier surface
         currentBezierSurface = bezierManager.CreateNewSurface(surfaceType);
         PositionBezierSurface(currentBezierSurface, new Vector3(0, 1, 2));
+        UpdatePNSButtonState();
 
         Debug.Log($"Created Bezier {surfaceType} surface");
     }
@@ -270,16 +319,49 @@ public class EnhancedModelCreator : MonoBehaviour
     public ProBuilderMesh CreateModelByType(ShapeType type)
     {
         ProBuilderMesh mesh = null;
-        if (currentShapeType == ShapeType.Cube) mesh = ShapeGenerator.GenerateCube(PivotLocation.Center, new Vector3(1, 1, 1));
-        else if (currentShapeType == ShapeType.Sphere) mesh = ShapeGenerator.GenerateIcosahedron(PivotLocation.Center, 1, Mathf.RoundToInt(subDivisionSlider.value));
-        else if (currentShapeType == ShapeType.Plane) mesh = ShapeGenerator.GeneratePlane(PivotLocation.Center, 1, 1, Mathf.RoundToInt(subDivisionSlider.value), Mathf.RoundToInt(subDivisionSlider.value), Axis.Up);
-        else if (currentShapeType == ShapeType.Cone) mesh = ShapeGenerator.GenerateCone(PivotLocation.Center, 1, 1, Mathf.RoundToInt(subDivisionSlider.value));
+
+        // Create quad-based meshes where possible for better PNS results
+        if (currentShapeType == ShapeType.Cube)
+        {
+            mesh = ShapeGenerator.GenerateCube(PivotLocation.Center, new Vector3(1, 1, 1));
+        }
+        else if (currentShapeType == ShapeType.Sphere)
+        {
+            mesh = ShapeGenerator.GenerateIcosahedron(PivotLocation.Center, 1, Mathf.RoundToInt(subDivisionSlider.value));
+        }
+        else if (currentShapeType == ShapeType.Plane)
+        {
+            // Use quad-based plane for better PNS compatibility
+            mesh = ShapeGenerator.GeneratePlane(PivotLocation.Center, 1, 1,
+                Mathf.RoundToInt(subDivisionSlider.value), Mathf.RoundToInt(subDivisionSlider.value), Axis.Up);
+
+            // Convert triangulated faces to quads where possible
+            ConvertToQuads(mesh);
+        }
+        else if (currentShapeType == ShapeType.Cone)
+        {
+            mesh = ShapeGenerator.GenerateCone(PivotLocation.Center, 1, 1, Mathf.RoundToInt(subDivisionSlider.value));
+        }
+
         return mesh;
+    }
+
+    private void ConvertToQuads(ProBuilderMesh mesh)
+    {
+        try
+        {
+            mesh.ToMesh();
+            mesh.Refresh();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"Could not convert to quads: {e.Message}");
+        }
     }
 
     public void SizeSliderUpdated()
     {
-        if (currentModel != null)
+        if (currentModel != null && sizeSlider != null)
         {
             currentModel.SetScale(Vector3.one * sizeSlider.value);
         }
@@ -295,6 +377,183 @@ public class EnhancedModelCreator : MonoBehaviour
             Destroy(mesh.gameObject);
         }
     }
+
+    // PNS Integration Methods
+    public void ConvertCurrentModelToPNS()
+    {
+        if (pnsIntegration == null)
+        {
+            Debug.LogError("PNS Integration not found!");
+            return;
+        }
+
+        if (currentModel != null)
+        {
+            ProBuilderMesh proBuilderMesh = currentModel.GetEditModel();
+            if (proBuilderMesh != null)
+            {
+                string filename = $"model_{currentModel.GetInstanceID()}_{System.DateTime.Now.Ticks}";
+                pnsIntegration.ConvertProBuilderToPNS(proBuilderMesh, filename);
+                Debug.Log($"Converted current model to PNS: {filename}");
+            }
+            else
+            {
+                Debug.LogError("No ProBuilder mesh found in current model");
+            }
+        }
+        else if (currentBezierSurface != null)
+        {
+            string filename = $"bezier_surface_{currentBezierSurface.surfaceID}_{System.DateTime.Now.Ticks}";
+            pnsIntegration.ConvertBezierSurfaceToPNS(currentBezierSurface, filename);
+            Debug.Log($"Converted current Bezier surface to PNS: {filename}");
+        }
+        else
+        {
+            Debug.LogWarning("No model or Bezier surface selected for PNS conversion");
+        }
+    }
+
+    public void ConvertAllModelsToPNS()
+    {
+        if (pnsIntegration != null)
+        {
+            pnsIntegration.ConvertAllModels();
+        }
+    }
+
+    public void TestPNSWithSimpleQuad()
+    {
+        if (pnsIntegration != null)
+        {
+            pnsIntegration.TestPNSWithSimpleQuad();
+        }
+        else
+        {
+            Debug.LogError("PNS Integration not found!");
+        }
+    }
+
+    public void TestPNSWithComplexQuad()
+    {
+        if (pnsIntegration != null)
+        {
+            pnsIntegration.TestPNSWithComplexQuadMesh();
+        }
+        else
+        {
+            Debug.LogError("PNS Integration not found!");
+        }
+    }
+
+    public void TestPNSWithInterestingGeometry()
+    {
+        if (pnsIntegration != null)
+        {
+            pnsIntegration.TestPNSWithInterestingGeometry();
+        }
+        else
+        {
+            Debug.LogError("PNS Integration not found!");
+        }
+    }
+
+    public void TestPNSWithCylinderSurface()
+    {
+        if (pnsIntegration != null)
+        {
+            pnsIntegration.TestPNSWithCylinderSurface();
+        }
+        else
+        {
+            Debug.LogError("PNS Integration not found!");
+        }
+    }
+
+    public void TestPNSWithLowPolySphere()
+    {
+        if (pnsIntegration != null)
+        {
+            pnsIntegration.TestPNSWithLowPolySphere();
+        }
+        else
+        {
+            Debug.LogError("PNS Integration not found!");
+        }
+    }
+
+    public void TestPNSWithFacetedTorus()
+    {
+        if (pnsIntegration != null)
+        {
+            pnsIntegration.TestPNSWithFacetedTorus();
+        }
+        else
+        {
+            Debug.LogError("PNS Integration not found!");
+        }
+    }
+
+    public void TestPNSWithSharpObject()
+    {
+        if (pnsIntegration != null)
+        {
+            pnsIntegration.TestPNSWithSharpObject();
+        }
+        else
+        {
+            Debug.LogError("PNS Integration not found!");
+        }
+    }
+
+    public void DebugCurrentMeshTopology()
+    {
+        if (pnsIntegration != null && currentModel != null)
+        {
+            var mesh = currentModel.GetEditModel();
+            if (mesh != null)
+            {
+                pnsIntegration.DebugProBuilderMesh(mesh);
+            }
+            else
+            {
+                Debug.LogError("No ProBuilder mesh found in current model");
+            }
+        }
+        else
+        {
+            Debug.LogError("PNS Integration or current model not found!");
+        }
+    }
+
+    private void OnDegreeRaiseChanged(bool value)
+    {
+        if (pnsIntegration != null)
+        {
+            pnsIntegration.SetDegreeRaise(value);
+        }
+    }
+
+    private void OnExportFormatChanged(int index)
+    {
+        if (pnsIntegration != null && exportFormatDropdown != null)
+        {
+            string[] formats = { "bv", "igs", "step" };
+            if (index >= 0 && index < formats.Length)
+            {
+                pnsIntegration.SetExportFormat(formats[index]);
+            }
+        }
+    }
+
+    private void UpdatePNSButtonState()
+    {
+        if (convertToPNSButton != null)
+        {
+            bool canConvert = (currentModel != null) || (currentBezierSurface != null);
+            convertToPNSButton.interactable = canConvert;
+        }
+    }
+
     public void CreateBezierFlat() => CreateBezierSurface("flat");
     public void CreateBezierDome() => CreateBezierSurface("dome");
     public void CreateBezierWavy() => CreateBezierSurface("wavy");
@@ -313,6 +572,8 @@ public class EnhancedModelCreator : MonoBehaviour
         Debug.Log($"importedObjectsDropdown: {(importedObjectsDropdown != null ? "Assigned" : "NULL")}");
         Debug.Log($"createImportedObjectButton: {(createImportedObjectButton != null ? "Assigned" : "NULL")}");
         Debug.Log($"importedObjectsCountText: {(importedObjectsCountText != null ? "Assigned" : "NULL")}");
+        Debug.Log($"pnsIntegration: {(pnsIntegration != null ? "Assigned" : "NULL")}");
+        Debug.Log($"convertToPNSButton: {(convertToPNSButton != null ? "Assigned" : "NULL")}");
 
         if (OBJImportHandler.Instance != null)
         {
