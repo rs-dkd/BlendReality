@@ -121,16 +121,6 @@ Enable for your target platform (Oculus, etc.)
 
 ## 📊 Project Roadmap
 
-| Milestone | Description | Timeline |
-|-----------|-------------|----------|
-| Setup & Environment | Project setup, basic VR environment | May 7 - May 14 |
-| Core UI Framework | Tool selection, 3D menus, settings | May 14 - May 25 |
-| Import/Export System | File format support, asset pipeline | May 25 - June 1 |
-| Basic Modeling | Primitives, selection, transforms | June 1 - June 15 |
-| Advanced Modeling | Boolean ops, NURBS, knife tools | June 15- June 29 |
-| Texturing & Materials | UV unwrapping, materials, colors | June 29 - July 13 |
-| Testing & Completion | Optimization, testing, documentation | July 13 - July 27 |
-
 ## 🧪 Testing
 
 - **Unit Testing:** Test coverage for core modeling operations
