@@ -32,6 +32,15 @@ public class AxisIndicators : MonoBehaviour
         line.SetPosition(0, Vector3.zero);
         line.SetPosition(1, direction * axisLength);
 
+        CapsuleCollider collider = line.gameObject.AddComponent<CapsuleCollider>();
+        collider.radius = lineWidth * 2;
+        collider.height = 1;
+        Debug.Log(direction.x);
+        if (direction.x != 0) collider.direction = 0;
+        else if (direction.y != 0) collider.direction = 1;
+        else collider.direction = 2;
+
+
         GameObject cone = CreateCone(color);
         cone.transform.SetParent(axisObj.transform);
         cone.transform.localPosition = direction * axisLength;
@@ -44,7 +53,6 @@ public class AxisIndicators : MonoBehaviour
         GameObject cone = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         cone.transform.localScale = new Vector3(1, 1, 1);
 
-        // Set the material color
         MeshRenderer renderer = cone.GetComponent<MeshRenderer>();
         Material coneMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         coneMaterial.color = color;

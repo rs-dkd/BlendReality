@@ -1,10 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+
+[System.Serializable]
+public class SelectionChangedEvent : UnityEvent<List<ModelData>> { }
 
 public class SelectionManager : MonoBehaviour
 {
     public static SelectionManager Instance { get; private set; }
+    public SelectionChangedEvent OnSelectionChanged = new SelectionChangedEvent();
 
     void Awake()
     {
@@ -28,6 +33,7 @@ public class SelectionManager : MonoBehaviour
             selectedModels[i].UnSelectModel();
         }
         selectedModels.Clear();
+        OnSelectionChanged.Invoke(selectedModels);
     }
 
     public void SelectModel(ModelData model)
@@ -35,6 +41,7 @@ public class SelectionManager : MonoBehaviour
         ClearSelection();
         selectedModels.Add(model);
         model.SelectModel();
+        OnSelectionChanged.Invoke(selectedModels);
     }
 
     public void RemoveModelFromSelection(ModelData model)
@@ -42,10 +49,24 @@ public class SelectionManager : MonoBehaviour
         ClearSelection();
         selectedModels.Remove(model);
         model.UnSelectModel();
+        OnSelectionChanged.Invoke(selectedModels);
     }
     public void AddModelToSelection(ModelData model)
     {
         selectedModels.Add(model);
         model.SelectModel();
+        OnSelectionChanged.Invoke(selectedModels);
+    }
+
+    public ModelData GetFirstSelected()
+    {
+        if(selectedModels.Count > 0)
+        {
+            return selectedModels[0];
+        }
+        else
+        {
+            return null;
+        }
     }
 }

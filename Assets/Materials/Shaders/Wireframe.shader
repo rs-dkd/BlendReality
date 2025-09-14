@@ -1,3 +1,4 @@
+
 Shader "Custom/Wireframe"
 {
     Properties
@@ -5,6 +6,8 @@ Shader "Custom/Wireframe"
         _WireThickness ("Wire Thickness", RANGE(0, 800)) = 100
         _FaceAlpha ("Face Transparency", Range(0, 1)) = 0.0
         _WireColor ("Wire Color", Color) = (1, 1, 1, 1)
+        _FaceColor ("Face Color", Color) = (0, 0, 0, 1)
+        [Toggle] _ShowBackfaces ("Show Backfaces", Float) = 0
     }
 
     SubShader
@@ -15,7 +18,7 @@ Shader "Custom/Wireframe"
         {
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
-            Cull Back
+            Cull Off
 
             Name "Wireframe Pass"
 
@@ -25,12 +28,15 @@ Shader "Custom/Wireframe"
             #pragma geometry geom
             #pragma fragment frag
             #pragma multi_compile_instancing
+            #pragma shader_feature _SHOWBACKFACES_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             float _WireThickness;
             float _FaceAlpha;
             float4 _WireColor;
+            float4 _FaceColor;
+            float _ShowBackfaces;
 
             struct Attributes
             {
@@ -102,15 +108,17 @@ Shader "Custom/Wireframe"
                 triangleStream.Append(o);
             }
 
-            half4 frag(g2f i) : SV_Target
+
+            half4 frag(g2f i, float facing : VFACE) : SV_Target
             {
+
+                if (_ShowBackfaces < 0.5 && facing < 0)
+                    discard;
+
                 float minDistanceToEdge = min(i.dist[0], min(i.dist[1], i.dist[2])) * i.dist[3];
                 float t = exp2(-2 * minDistanceToEdge * minDistanceToEdge);
 
-                // Transparent face base
-                half4 faceColor = half4(0, 0, 0, _FaceAlpha);
-
-                // Blend wire color over face
+                half4 faceColor = half4(_FaceColor.rgb, _FaceAlpha);
                 return lerp(faceColor, _WireColor, t);
             }
             ENDHLSL

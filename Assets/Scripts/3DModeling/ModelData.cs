@@ -5,23 +5,21 @@ using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Transformers;
-
+using System.Linq;
 public class ModelData : MonoBehaviour
 {
-    public int faces;
-    public int vertices;
-    public int edges;
-
-
+    public string modelName;
+    public int modelID;
     private Material originalMaterial;
     private Material overrideMaterial;
-    
-
+    public MeshFilter meshFilter;
     public MeshRenderer meshRender;
     public MeshCollider meshCollider;
     public ProBuilderMesh editingModel;
     public Transform trans;
     private bool isSelected;
+    public SmoothSurface smoothedMesh;
+
     public void SetPosition(Vector3 pos)
     {
         trans.position = pos;
@@ -30,6 +28,10 @@ public class ModelData : MonoBehaviour
     {
         trans.localScale = scale;
     }
+
+
+
+
     public void UpdateMesh(ProBuilderMesh mesh)
     {
         editingModel.Clear();
@@ -39,102 +41,115 @@ public class ModelData : MonoBehaviour
 
         editingModel.ToMesh();
         editingModel.Refresh();
-        UpdateMaterial();
-
     }
-
-    public void SelectModel()
+    public void UpdateMeshEdit()
     {
-        isSelected = true;
-        UpdateMaterial();
-    }
-    public void UnSelectModel()
-    {
-        isSelected = false;
-        UpdateMaterial();
+        editingModel.Refresh();
+        smoothedMesh.UpdateMesh();
     }
     public ProBuilderMesh GetEditModel()
     {
         return editingModel;
     }
-
+    public Mesh GetMesh()
+    {
+        return meshFilter.sharedMesh;
+    }
     public void FinalizeEditModel()
     {
-        UpdateStats(editingModel.faceCount, editingModel.edgeCount, editingModel.vertexCount);
         editingModel.ToMesh();
         editingModel.Refresh();
     }
+
+
+
+
+
+
     public void SetupModel(ProBuilderMesh _editingModel)
     {
         editingModel = _editingModel;
         trans = this.transform;
         meshRender = this.GetComponent<MeshRenderer>();
         meshCollider = this.AddComponent<MeshCollider>();
-        ModelsManager.Instance.TrackModel(this);
-        SetOriginalMaterial(ModelsManager.Instance.GetDefaultMaterial());
-        ViewManager.Instance.ChangeViewForModel(this);
+        meshFilter = this.GetComponent<MeshFilter>();
+        modelID = ModelsManager.Instance.TrackModel(this);
 
         Rigidbody rigid = this.AddComponent<Rigidbody>();
         rigid.isKinematic = true;
 
         this.AddComponent<XRGrabInteractable>();
         this.AddComponent<XRGeneralGrabTransformer>();
+
+
+        if(smoothedMesh == null)
+        {
+            GameObject obj = new GameObject("MyObject");
+            obj.transform.parent = this.transform;
+            obj.transform.localPosition = Vector3.zero;
+            smoothedMesh = obj.AddComponent<SmoothSurface>();
+            smoothedMesh.SetupModel(this);
+        }
+
+        ShadingUpdated();
+        ViewManager.Instance.OnShadingChanged.AddListener(ShadingUpdated);
     }
+
+
+
+    public void SelectModel()
+    {
+        isSelected = true;
+        ShadingUpdated();
+    }
+    public void UnSelectModel()
+    {
+        isSelected = false;
+        ShadingUpdated();
+    }
+
+
+    public void ShadingUpdated()
+    {
+        meshRender.sharedMaterial = ViewManager.Instance.GetCurrentShading(isSelected);
+    }
+
+
+
 
     public void DeleteModel()
     {
+        ViewManager.Instance.OnShadingChanged.RemoveListener(ShadingUpdated);
         ModelsManager.Instance.UnTrackModel(this);
         Destroy(this.gameObject);
     }
-    public void SetOriginalMaterial(Material _material)
-    {
-        originalMaterial = _material;
 
-        UpdateMaterial();
+
+
+ 
+    public int GetFacesCount()
+    {
+        return editingModel.faceCount;
     }
-    public void SetOverrideMaterial(Material _overrideMaterial)
+    public int GetEdgesCount()
     {
-        overrideMaterial = _overrideMaterial;
-        UpdateMaterial();
+        return editingModel.edgeCount;
     }
-    private void UpdateMaterial()
+    public int GetVertCount()
     {
-        List<Material> materials = new List<Material>();
-        if (ViewManager.Instance.GetViewType() == ViewType.Standard)
-        {
-            materials.Add(originalMaterial);
-        }
-        else
-        {
-            materials.Add(overrideMaterial);
-        }
-
-        if (isSelected)
-        {
-            materials.Add(ModelsManager.Instance.GetHighLightMaterial());
-        }
-
-        meshRender.SetMaterials(materials);
+        return editingModel.vertexCount;
     }
 
-    public void UpdateStats(int _faces, int _edges, int _vertices)
+    public List<Vector3> GetVerts()
     {
-        faces = _faces;
-        vertices = _vertices;
-        edges = _edges;
+        return editingModel.VerticesInWorldSpace().ToList();
     }
-    public int GetFaces()
+    public List<Face> GetFaces()
     {
-        return faces;
+        return editingModel.faces.ToList<Face>();
     }
-    public int GetEdges()
-    {
-        return edges;
-    }
-    public int GetVerts()
-    {
-        return vertices;
-    }
+
+
 
 
 

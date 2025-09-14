@@ -1,10 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+
+[System.Serializable]
+public class ModelsChangedEvent : UnityEvent<List<ModelData>> { }
 
 public class ModelsManager : MonoBehaviour
 {
     public static ModelsManager Instance { get; private set; }
+    public ModelsChangedEvent OnModelsChanged = new ModelsChangedEvent();
 
     void Awake()
     {
@@ -18,26 +23,21 @@ public class ModelsManager : MonoBehaviour
         DontDestroyOnLoad(gameObject); 
     }
 
-    public Material defaultMaterial;
-    public Material highlightMaterial;
-    public Material GetHighLightMaterial()
-    {
-        return highlightMaterial;
-    }
-    public Material GetDefaultMaterial()
-    {
-        return defaultMaterial;
-    }
+    private int modelIndex;
 
     public List<ModelData> models = new List<ModelData>();
 
-    public void TrackModel(ModelData model)
+    public int TrackModel(ModelData model)
     {
+        modelIndex++;
         models.Add(model);
+        OnModelsChanged.Invoke(models);
+        return modelIndex;
     }
     public void UnTrackModel(ModelData model)
     {
         models.Remove(model);
+        OnModelsChanged.Invoke(models);
     }
     public List<ModelData> GetAllModelsInScene()
     {
