@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.ProBuilder;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
@@ -12,9 +13,11 @@ public enum EditMode
 {
     Object,Pivot,Vertex,Edge,Face
 }
+public class EditModeChangedEvent : UnityEvent { }
 public class ModelEditingPanel : MonoBehaviour
 {
     public static ModelEditingPanel Instance;
+    public EditModeChangedEvent OnEditModeChanged = new EditModeChangedEvent();
 
     private void Awake()
     {
@@ -33,12 +36,12 @@ public class ModelEditingPanel : MonoBehaviour
     public void ChangeEditMode()
     {
         currentEditMode = (EditMode)editModeDropdown.value;
-        StartEditModel();
+        OnEditModeChanged.Invoke();
+        UpdateEditModel();
     }
 
     public ModelData selectedModel;
 
-    [Header("Visual Settings")]
     public Material surfaceMaterial;
     public Material controlPointMaterial;
     public Material controlPointGrabbedMaterial;
@@ -107,29 +110,34 @@ public class ModelEditingPanel : MonoBehaviour
         return mat;
     }
 
-    public void StartEditModel()
+    public void UpdateEditModel()
     {
-        selectedModel = SelectionManager.Instance.GetFirstSelected();
-        if (selectedModel == null) return;
+
 
         // Deactivate old control points
         foreach (var cp in inUseControlPoints)
             cp.Deactivate();
         inUseControlPoints.Clear();
 
+
+        selectedModel = SelectionManager.Instance.GetFirstSelected();
+        if (selectedModel == null) return;
+
         int controlPointIndex = 0;
 
-        //if (currentEditMode == EditMode.Object)
-        //{
-        //    int[] verts;
-        //    CreateOrReuseControlPoint(verts, EditMode.Object, selectedModel.trans.position, ref controlPointIndex, Vector3.up);
-        //}
-        //else if (currentEditMode == EditMode.Pivot)
-        //{
-        //    int[] verts;
-        //    CreateOrReuseControlPoint(verts, EditMode.Pivot, selectedModel.trans.position, ref controlPointIndex, Vector3.up);
-        //}
-        if (currentEditMode == EditMode.Vertex)
+
+
+
+
+        if (currentEditMode == EditMode.Object)
+        {
+
+        }
+        else if (currentEditMode == EditMode.Pivot)
+        {
+
+        }
+        else if (currentEditMode == EditMode.Vertex)
         {
             List<Vector3> allPositions = selectedModel.GetVerts();
             Dictionary<Vector3, List<int>> uniqueVertGroups = new Dictionary<Vector3, List<int>>();

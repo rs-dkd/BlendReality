@@ -24,33 +24,45 @@ public enum ModelType
 }
 public class ModelCreator : MonoBehaviour
 {
-    [Header("Current Model")]
     public ModelData currentModel;
     public ModelType currentShapeType;
-    public TMP_Dropdown typeDropdown;
 
-    [Header("UI Controls")]
     public bool hasUniformSize;
     public Toggle uniformSizeToggle;
-    public Slider sizeSlider;
-    public Slider xSizeSlider;
-    public Slider ySizeSlider;
-    public Slider zSizeSlider;
+    public SliderUI sizeSlider;
+    public SliderUI xSizeSlider;
+    public SliderUI ySizeSlider;
+    public SliderUI zSizeSlider;
 
-    public TMP_Text radiusText;
-    public TMP_Text radiusSubDivText;
 
-    public Slider subDivisionSlider;
-    public Slider xSubDivisionSlider;
-    public Slider ySubDivisionSlider;
-    public Slider zSubDivisionSlider;
+    public SliderUI subDivisionSlider;
+    public SliderUI xSubDivisionSlider;
+    public SliderUI ySubDivisionSlider;
+    public SliderUI zSubDivisionSlider;
 
-   
+    
+    public ToggleGroupUI modelTypeToggleGroupUI;
 
     void Start()
     {
+        Debug.Log(modelTypeToggleGroupUI);
+        Debug.Log(modelTypeToggleGroupUI.OnToggleGroupChanged);
+        modelTypeToggleGroupUI.OnToggleGroupChanged.AddListener(ModelTypeSelected);
+
+
+        sizeSlider.OnSliderValueChangedEvent.AddListener(SizeSliderUpdated);
+        xSizeSlider.OnSliderValueChangedEvent.AddListener(SizeSliderUpdated);
+        ySizeSlider.OnSliderValueChangedEvent.AddListener(SizeSliderUpdated);
+        zSizeSlider.OnSliderValueChangedEvent.AddListener(SizeSliderUpdated);
+
+        subDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
+        xSubDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
+        ySubDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
+        zSubDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
 
     }
+
+
 
     public void FinalizeLastModel()
     {
@@ -62,179 +74,159 @@ public class ModelCreator : MonoBehaviour
         }
     }
 
-    public void UniformSizeToggleUpdated()
+
+
+
+
+    public void ModelTypeSelected(Toggle toggle)
     {
-        Debug.Log("ff");
+        if (Enum.TryParse(toggle.name, out currentShapeType))
+        {
+            Debug.Log(currentShapeType);
+            UniformChangedUpdateSliderValues();
+            UpdateSizeSlidersUI();
+            UpdateSubDSlidersMinMax();
+            UpdateSubDSliders();
+
+            CreateOrUpdateModel();
+        }
+    }
+    public void UniformSizeToggleChanged()
+    {
+        UniformChangedUpdateSliderValues();
+        UpdateSizeSlidersUI();
+        UpdateSubDSlidersMinMax();
+        UpdateSubDSliders();
+    }
+
+
+
+
+    private void UniformChangedUpdateSliderValues()
+    {
         if(hasUniformSize != uniformSizeToggle.isOn)
         {
             hasUniformSize = uniformSizeToggle.isOn;
 
             if (hasUniformSize == true)
             {
-                sizeSlider.value = xSizeSlider.value;
+                sizeSlider.SetValue(xSizeSlider.GetValue());
             }
             else
             {
-                xSizeSlider.value = sizeSlider.value;
-                ySizeSlider.value = sizeSlider.value;
-                zSizeSlider.value = sizeSlider.value;
+                xSizeSlider.SetValue(sizeSlider.GetValue());
+                ySizeSlider.SetValue(sizeSlider.GetValue());
+                zSizeSlider.SetValue(sizeSlider.GetValue());
             }
-            UpdateUniformUI();
-            TypeDropdownUpdated();
         }
     }
-
-    public void UpdateUniformUI()
+    private void UpdateSizeSlidersUI()
     {
-        Debug.Log(typeDropdown);
-        if (typeDropdown.value == 5) // plane
+        if (currentShapeType == ModelType.PlaneFlat) // plane
         {
             if (hasUniformSize)
             {
-                sizeSlider.transform.parent.gameObject.SetActive(true);
-                xSizeSlider.transform.parent.gameObject.SetActive(false);
-                ySizeSlider.transform.parent.gameObject.SetActive(false);
-                zSizeSlider.transform.parent.gameObject.SetActive(false);
+                
+                sizeSlider.Show();
+                xSizeSlider.Hide();
+                ySizeSlider.Hide();
+                zSizeSlider.Hide();
             }
             else
             {
-                sizeSlider.transform.parent.gameObject.SetActive(false);
-                xSizeSlider.transform.parent.gameObject.SetActive(true);
-                ySizeSlider.transform.parent.gameObject.SetActive(false);
-                zSizeSlider.transform.parent.gameObject.SetActive(true);
+                sizeSlider.Hide();
+                xSizeSlider.Show();
+                ySizeSlider.Hide();
+                zSizeSlider.Show();
             }
         }
         else
         {
             if (hasUniformSize)
             {
-                sizeSlider.transform.parent.gameObject.SetActive(true);
-                xSizeSlider.transform.parent.gameObject.SetActive(false);
-                ySizeSlider.transform.parent.gameObject.SetActive(false);
-                zSizeSlider.transform.parent.gameObject.SetActive(false);
+                sizeSlider.Show();
+                xSizeSlider.Hide();
+                ySizeSlider.Hide();
+                zSizeSlider.Hide();
             }
             else
             {
-                sizeSlider.transform.parent.gameObject.SetActive(false);
-                xSizeSlider.transform.parent.gameObject.SetActive(true);
-                ySizeSlider.transform.parent.gameObject.SetActive(true);
-                zSizeSlider.transform.parent.gameObject.SetActive(true);
+                sizeSlider.Hide();
+                xSizeSlider.Show();
+                ySizeSlider.Show();
+                zSizeSlider.Show();
             }
         }
     }
-
-    public void UpdateSubDSlidersMinMax()
+    private void UpdateSubDSlidersMinMax()
     {
-        if (typeDropdown.value == 0)
+        if (currentShapeType == ModelType.Cube)
         {
-            xSubDivisionSlider.minValue = 1;
-            xSubDivisionSlider.maxValue = 10;
-            ySubDivisionSlider.minValue = 1;
-            ySubDivisionSlider.maxValue = 10;
-            zSubDivisionSlider.minValue = 1;
-            zSubDivisionSlider.maxValue = 10;
+            xSubDivisionSlider.SetMinMax(1,10);
+            ySubDivisionSlider.SetMinMax(1,10);
+            zSubDivisionSlider.SetMinMax(1,10);
         }
-        else if (typeDropdown.value == 1)//sphere
+        else if (currentShapeType == ModelType.Sphere)//sphere
         {
-            subDivisionSlider.minValue = 0;
-            subDivisionSlider.maxValue = 5;
+            subDivisionSlider.SetMinMax(0,5);
         }
-        else if (typeDropdown.value == 2 || typeDropdown.value == 3 || typeDropdown.value == 4)//cone, pipe, Cylinder
+        else if (currentShapeType == ModelType.Cone || currentShapeType == ModelType.Pipe || currentShapeType == ModelType.Cylinder)//cone, pipe, Cylinder
         {
-            subDivisionSlider.minValue = 3;
-            subDivisionSlider.maxValue = 10;
-            ySubDivisionSlider.minValue = 0;
-            ySubDivisionSlider.maxValue = 10;
+            subDivisionSlider.SetMinMax(3,10);
+            ySubDivisionSlider.SetMinMax(0,10);
         }
-        else if (typeDropdown.value == 5 || typeDropdown.value == 6 || typeDropdown.value == 7)//planes
+        else if (currentShapeType == ModelType.PlaneFlat || currentShapeType == ModelType.PlaneDome || currentShapeType == ModelType.PlaneWavy)//planes
         {
-            xSubDivisionSlider.minValue = 0;
-            xSubDivisionSlider.maxValue = 10;
-            zSubDivisionSlider.minValue = 0;
-            zSubDivisionSlider.maxValue = 10;
+            xSubDivisionSlider.SetMinMax(0,10);
+            zSubDivisionSlider.SetMinMax(0,10);
         }
-
-
-
-
-
-
-
-
     }
-    public void TypeDropdownUpdated()
+    private void UpdateSubDSliders()
     {
-
-
-
-
-
-
-
-
-        if (typeDropdown.value == 0)//Cube
+        if (currentShapeType == ModelType.Cube)//Cube
         {
-            radiusText.text = "Width";
-            radiusSubDivText.text = "Width Subdiv";
+            subDivisionSlider.Hide();
+            xSubDivisionSlider.Show();
+            ySubDivisionSlider.Show();
+            zSubDivisionSlider.Show();
+        }
+        else if (currentShapeType == ModelType.Sphere)//Sphere
+        {
+            subDivisionSlider.Show();
+            xSubDivisionSlider.Hide();
+            ySubDivisionSlider.Hide();
+            zSubDivisionSlider.Hide();
+        }
+        else if (currentShapeType == ModelType.Pipe)//pipe,
+        {
 
-            subDivisionSlider.transform.parent.gameObject.SetActive(false);
-            xSubDivisionSlider.transform.parent.gameObject.SetActive(true);
-            ySubDivisionSlider.transform.parent.gameObject.SetActive(true);
-            zSubDivisionSlider.transform.parent.gameObject.SetActive(true);
+            subDivisionSlider.Show();
+            xSubDivisionSlider.Hide();
+            ySubDivisionSlider.Hide();
+            zSubDivisionSlider.Hide();
+        }
+        else if (currentShapeType == ModelType.Cone || currentShapeType == ModelType.Cylinder)//cone,  Cylinder
+        {
 
-
+            subDivisionSlider.Show();
+            xSubDivisionSlider.Hide();
+            ySubDivisionSlider.Show();
+            zSubDivisionSlider.Hide();
 
         }
-        else if (typeDropdown.value == 1)//Sphere
+        else if (currentShapeType == ModelType.PlaneFlat || currentShapeType == ModelType.PlaneDome || currentShapeType == ModelType.PlaneWavy)//planes
         {
- 
-            subDivisionSlider.transform.parent.gameObject.SetActive(true);
-            xSubDivisionSlider.transform.parent.gameObject.SetActive(false);
-            ySubDivisionSlider.transform.parent.gameObject.SetActive(false);
-            zSubDivisionSlider.transform.parent.gameObject.SetActive(false);
-
-
-            subDivisionSlider.maxValue = 5;
-            if (subDivisionSlider.value > 5) subDivisionSlider.value = 5;
+            subDivisionSlider.Hide();
+            xSubDivisionSlider.Show();
+            ySubDivisionSlider.Hide();
+            zSubDivisionSlider.Show();
         }
-        else if (typeDropdown.value == 2)//pipe,
-        {
-            radiusText.text = "Radius";
-            radiusSubDivText.text = "Radius Subdiv";
-
-            subDivisionSlider.transform.parent.gameObject.SetActive(true);
-            xSubDivisionSlider.transform.parent.gameObject.SetActive(false);
-            ySubDivisionSlider.transform.parent.gameObject.SetActive(false);
-            zSubDivisionSlider.transform.parent.gameObject.SetActive(false);
-        }
-        else if (typeDropdown.value == 3 || typeDropdown.value == 4)//cone,  Cylinder
-        {
-            radiusText.text = "Radius";
-            radiusSubDivText.text = "Radius Subdiv";
-
-            subDivisionSlider.transform.parent.gameObject.SetActive(true);
-            xSubDivisionSlider.transform.parent.gameObject.SetActive(false);
-            ySubDivisionSlider.transform.parent.gameObject.SetActive(true);
-            zSubDivisionSlider.transform.parent.gameObject.SetActive(false);
-        }
-        else if (typeDropdown.value == 5 || typeDropdown.value == 6 || typeDropdown.value == 7)//planes
-        {
-            radiusText.text = "Width";
-            radiusSubDivText.text = "Width Subdiv";
-
-            subDivisionSlider.transform.parent.gameObject.SetActive(false);
-            xSubDivisionSlider.transform.parent.gameObject.SetActive(true);
-            ySubDivisionSlider.transform.parent.gameObject.SetActive(false);
-            zSubDivisionSlider.transform.parent.gameObject.SetActive(true);
-        }
-        UpdateSubDSlidersMinMax();
-        UpdateModel();
     }
 
 
 
 
-    public void UpdateModel()
+    private void CreateOrUpdateModel()
     {
         if (currentModel != null)
         {
@@ -243,40 +235,48 @@ public class ModelCreator : MonoBehaviour
             currentModel = null;
         }
         ProBuilderMesh mesh = null;
-        currentShapeType = (ModelType)typeDropdown.value;
 
         mesh = CreateModelByType(currentShapeType);
         currentModel = mesh.gameObject.AddComponent<ModelData>();
         currentModel.SetupModel(mesh);
         currentModel.SetPosition(new Vector3(0, 1, 2));
-        SizeSliderUpdated();
+        SizeSliderUpdated(1);
         SelectionManager.Instance.SelectModel(currentModel);
     }
 
 
-    public ProBuilderMesh CreateModelByType(ModelType type)
+    private ProBuilderMesh CreateModelByType(ModelType type)
     {
         ProBuilderMesh mesh = null;
         if (type == ModelType.Cube)
         {
-            mesh = CreateSubdividedCube(Mathf.RoundToInt(xSubDivisionSlider.value), Mathf.RoundToInt(ySubDivisionSlider.value), Mathf.RoundToInt(zSubDivisionSlider.value));
+            mesh = CreateSubdividedCube(Mathf.RoundToInt(xSubDivisionSlider.GetValue()), Mathf.RoundToInt(ySubDivisionSlider.GetValue()), Mathf.RoundToInt(zSubDivisionSlider.GetValue()));
         }
-        else if (type == ModelType.Sphere) mesh = ShapeGenerator.GenerateIcosahedron(PivotLocation.Center, 1, Mathf.RoundToInt(subDivisionSlider.value));
-        else if (type == ModelType.PlaneFlat) mesh = ShapeGenerator.GeneratePlane(PivotLocation.Center, 1, 1, Mathf.RoundToInt(xSubDivisionSlider.value), Mathf.RoundToInt(zSubDivisionSlider.value), Axis.Up);
-        else if (type == ModelType.Cone) mesh = ShapeGenerator.GenerateCone(PivotLocation.Center, xSizeSlider.value, ySizeSlider.value, Mathf.RoundToInt(subDivisionSlider.value));
-        else if (type == ModelType.Pipe) mesh = ShapeGenerator.GeneratePipe(PivotLocation.Center, xSizeSlider.value, ySizeSlider.value, zSizeSlider.value, Mathf.RoundToInt(subDivisionSlider.value), Mathf.RoundToInt(ySubDivisionSlider.value));
-        else if (type == ModelType.Cylinder) mesh = ShapeGenerator.GenerateCylinder(PivotLocation.Center, Mathf.RoundToInt(subDivisionSlider.value), xSizeSlider.value, ySizeSlider.value, Mathf.RoundToInt(ySubDivisionSlider.value));
+        else if (type == ModelType.Sphere) mesh = ShapeGenerator.GenerateIcosahedron(PivotLocation.Center, 1, Mathf.RoundToInt(subDivisionSlider.GetValue()));
+        else if (type == ModelType.PlaneFlat) mesh = ShapeGenerator.GeneratePlane(PivotLocation.Center, 1, 1, Mathf.RoundToInt(xSubDivisionSlider.GetValue()), Mathf.RoundToInt(zSubDivisionSlider.GetValue()), Axis.Up);
+        else if (type == ModelType.Cone) mesh = ShapeGenerator.GenerateCone(PivotLocation.Center, xSizeSlider.GetValue(), ySizeSlider.GetValue(), Mathf.RoundToInt(subDivisionSlider.GetValue()));
+        else if (type == ModelType.Pipe) mesh = ShapeGenerator.GeneratePipe(PivotLocation.Center, xSizeSlider.GetValue(), ySizeSlider.GetValue(), zSizeSlider.GetValue(), Mathf.RoundToInt(subDivisionSlider.GetValue()), Mathf.RoundToInt(ySubDivisionSlider.GetValue()));
+        else if (type == ModelType.Cylinder) mesh = ShapeGenerator.GenerateCylinder(PivotLocation.Center, Mathf.RoundToInt(subDivisionSlider.GetValue()), xSizeSlider.GetValue(), ySizeSlider.GetValue(), Mathf.RoundToInt(ySubDivisionSlider.GetValue()));
         else if (type == ModelType.PlaneDome)
         {
-            mesh = GenerateDomePlane(1, 1, Mathf.RoundToInt(xSubDivisionSlider.value), Mathf.RoundToInt(zSubDivisionSlider.value), 1); 
+            mesh = GenerateDomePlane(1, 1, Mathf.RoundToInt(xSubDivisionSlider.GetValue()), Mathf.RoundToInt(zSubDivisionSlider.GetValue()), 1); 
         }
         else if (type == ModelType.PlaneWavy)
         {
-            mesh = GenerateWavyPlane(1, 1, Mathf.RoundToInt(xSubDivisionSlider.value), Mathf.RoundToInt(zSubDivisionSlider.value), 1);
+            mesh = GenerateWavyPlane(1, 1, Mathf.RoundToInt(xSubDivisionSlider.GetValue()), Mathf.RoundToInt(zSubDivisionSlider.GetValue()), 1);
         }
         return mesh;
     }
-    public static ProBuilderMesh CreateSubdividedCube(int xSub, int ySub, int zSub)
+
+
+
+
+
+
+
+
+
+    private static ProBuilderMesh CreateSubdividedCube(int xSub, int ySub, int zSub)
     {
         xSub = Mathf.Max(1, xSub);
         ySub = Mathf.Max(1, ySub);
@@ -410,7 +410,6 @@ public class ModelCreator : MonoBehaviour
 
         return mesh;
     }
-
     private ProBuilderMesh GenerateWavyPlane(float width, float depth, int widthSubdivisions, int depthSubdivisions, float waveHeight)
     {
         widthSubdivisions = Mathf.Max(1, widthSubdivisions);
@@ -434,7 +433,6 @@ public class ModelCreator : MonoBehaviour
 
         return planeMesh;
     }
-
     private ProBuilderMesh GenerateDomePlane(float width, float depth, int widthSubdivisions, int depthSubdivisions, float domeHeight)
     {
         widthSubdivisions = Mathf.Max(1, widthSubdivisions);
@@ -477,27 +475,26 @@ public class ModelCreator : MonoBehaviour
 
 
 
-    public void SizeSliderUpdated()
+    private void SizeSliderUpdated(float val)
     {
         if (currentModel != null)
         {
-            Vector3 newScale = Vector3.one * sizeSlider.value;
+            Vector3 newScale = Vector3.one * sizeSlider.GetValue();
             if (!hasUniformSize)
             {
-                newScale = new Vector3(xSizeSlider.value, ySizeSlider.value, zSizeSlider.value);
+                newScale = new Vector3(xSizeSlider.GetValue(), ySizeSlider.GetValue(), zSizeSlider.GetValue());
             }
 
             currentModel.transform.localScale = newScale;
         }
     }
-
-    public void SubDSliderUpdated()
+    private void SubDSliderUpdated(float val)
     {
         if (currentModel != null)
         {
             ProBuilderMesh mesh = CreateModelByType(currentShapeType);
             mesh.transform.position = currentModel.transform.position;
-            currentModel.UpdateMesh(mesh);
+            currentModel.UpdateMeshCreation(mesh);
             Destroy(mesh.gameObject);
         }
     }

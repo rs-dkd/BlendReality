@@ -1,9 +1,51 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+
+
+
+public static class MetricConverter
+{
+    private const float InchesPerMeter = 39.3701f;
+    private const int InchesPerFoot = 12;
+
+    public static string ToFeetAndInches(float meters)
+    {
+        if (meters <= 0)
+        {
+            return "0\"";
+        }
+
+        float totalInches = meters * InchesPerMeter;
+
+        if (totalInches < InchesPerFoot)
+        {
+            return $"{Mathf.RoundToInt(totalInches)}\"";
+        }
+        else
+        {
+            int feet = Mathf.FloorToInt(totalInches / InchesPerFoot);
+            int inches = Mathf.RoundToInt(totalInches % InchesPerFoot);
+
+            if (inches == InchesPerFoot)
+            {
+                feet++;
+                inches = 0;
+            }
+
+            return $"{feet}' {inches}\"";
+        }
+    }
+}
+
+
+
+
 public enum GridUnitSystem
 {
     Metric,
@@ -22,12 +64,14 @@ public enum ShadingType
 [System.Serializable]
 public class ShadingChangedEvent : UnityEvent { }
 public class ControlPointSizeChangedEvent : UnityEvent<float> { }
+public class UnitSystemChangedEvent : UnityEvent<GridUnitSystem> { }
 
 public class ViewManager : MonoBehaviour
 {
     public static ViewManager Instance { get; private set; }
     public ShadingChangedEvent OnShadingChanged = new ShadingChangedEvent();
     public ControlPointSizeChangedEvent OnControlPointSizeChanged = new ControlPointSizeChangedEvent();
+    public UnitSystemChangedEvent OnUnitSystemSizeChanged = new UnitSystemChangedEvent();
 
     void Awake()
     {
@@ -39,6 +83,10 @@ public class ViewManager : MonoBehaviour
 
         Instance = this;
         BackfaceUpdated();
+
+        shadingToggleGroup.OnToggleGroupChanged.AddListener(OnShadingToggleSelected);
+        unitSystemToggleGroup.OnToggleGroupChanged.AddListener(OnUnitSystemToggleSelected);
+        controlPointSizeSlider.OnSliderValueChangedEvent.AddListener(ControlPointSizeUpdated);
     }
 
     public Material hiddenLineMaterial;
@@ -69,12 +117,11 @@ public class ViewManager : MonoBehaviour
 
 
 
-
     public float controlPointSize = 0.1f;
-    public Slider controlPointSizeSlider;
-    public void ControlPointSizeUpdated()
+    public SliderUI controlPointSizeSlider;
+    public void ControlPointSizeUpdated(float value)
     {
-        controlPointSize = controlPointSizeSlider.value;
+        controlPointSize = value;
         OnControlPointSizeChanged.Invoke(controlPointSize);
     }
     public Material GetSelectedControlPointMaterial()
@@ -129,11 +176,20 @@ public class ViewManager : MonoBehaviour
     {
         return currentShadingType;
     }
-    public void ChangeView()
+    public ToggleGroupUI shadingToggleGroup;
+
+
+
+
+    public void OnShadingToggleSelected(Toggle toggle)
     {
-        currentShadingType = (ShadingType)shadingDropdown.value;
-        OnShadingChanged.Invoke();
+        if (Enum.TryParse(toggle.name, out currentShadingType))
+        {
+            OnShadingChanged.Invoke();
+        }
     }
+
+
     public Material GetCurrentShading(bool isSelected)
     {
         if (isSelected)
@@ -183,9 +239,16 @@ public class ViewManager : MonoBehaviour
 
 
 
+    public ToggleGroupUI unitSystemToggleGroup;
+    public void OnUnitSystemToggleSelected(Toggle toggle)
+    {
+        if (Enum.TryParse(toggle.name, out unitSystem))
+        {
+            OnUnitSystemSizeChanged.Invoke(unitSystem);
+        }
+    }
 
 
-    public TMP_Dropdown unitSystemDropdown;
     public GridUnitSystem unitSystem = GridUnitSystem.Metric;
     public ImperialDisplayMode imperialMode = ImperialDisplayMode.Adaptive;
     public Camera targetCamera;
@@ -196,10 +259,7 @@ public class ViewManager : MonoBehaviour
     private static readonly int MinorGridSizeID = Shader.PropertyToID("_GridSize");
     private static readonly int GridCenterID = Shader.PropertyToID("_GridCenter");
 
-    public void UnitSystemUpdated()
-    {
-        unitSystem = (GridUnitSystem)unitSystemDropdown.value;
-    }
+
     void Update()
     {
         Plane gridPlane = new Plane(transform.up, transform.position);

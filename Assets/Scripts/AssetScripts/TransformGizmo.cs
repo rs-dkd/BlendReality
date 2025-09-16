@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UIElements;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -15,13 +16,19 @@ public enum GizmoSpace
 public enum TransformType
 {
     Select,
+    Free,
     Move,
     Rotate,
     Scale
 }
+public class TransformTypeChangedEvent : UnityEvent { }
+
 public class TransformGizmo : MonoBehaviour
 {
     public static TransformGizmo Instance;
+    public TransformTypeChangedEvent OnTransformTypeChanged = new TransformTypeChangedEvent();
+
+
 
     public TMP_Dropdown transformTypeDropdown;
     public TMP_Dropdown gizmoSpaceDropdown;
@@ -148,18 +155,14 @@ public class TransformGizmo : MonoBehaviour
     public void SelectGizmoSpace()
     {
         gizmoSpace = (GizmoSpace)gizmoSpaceDropdown.value;
-
-
-
-
-
-
-
         GizmoUpdated();
     }
     public void SelectTransformMode()
     {
         transformType = (TransformType)transformTypeDropdown.value;
+        OnTransformTypeChanged.Invoke();
+
+
 
 
         xrGrabInters[0].trackPosition = true;
