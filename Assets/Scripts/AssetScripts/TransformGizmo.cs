@@ -21,39 +21,10 @@ public enum TransformType
     Rotate,
     Scale
 }
-public class TransformTypeChangedEvent : UnityEvent { }
 
 public class TransformGizmo : MonoBehaviour
 {
     public static TransformGizmo Instance;
-    public TransformTypeChangedEvent OnTransformTypeChanged = new TransformTypeChangedEvent();
-
-
-
-    public TMP_Dropdown transformTypeDropdown;
-    public TMP_Dropdown gizmoSpaceDropdown;
-
-
-
-    public float moveSnap = 0;
-    public float angleSnap = 0;
-    public float scaleSnap = 0;
-
-    public void UpdateMoveSnap(int newSnap)
-    {
-        moveSnap = newSnap;
-    }
-    public void UpdateRotateSnap(int newSnap)
-    {
-        angleSnap = newSnap;
-    }
-
-    public void UpdateScaleSnap(int newSnap)
-    {
-        scaleSnap = newSnap;
-    }
-
-
     private void Awake()
     {
         if (Instance == null)
@@ -64,75 +35,70 @@ public class TransformGizmo : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        axisParent.gameObject.SetActive(false);
     }
 
-    
-
-
-
-    public GizmoSpace gizmoSpace;
-    public TransformType transformType;
+    public Transform axisParent;
     public Transform[] axes;
-
     public Vector3 previousPosition;
     public Transform currentAxis;
-
     public LineRenderer[] axesLineRenders;
     public CapsuleCollider[] axesCapsules;
-    //public Vector3[] startingPositions;
-    //public Quaternion[] startingRot;
     public XRGeneralGrabTransformer[] xrGrabTrans;
     public XRGrabInteractable[] xrGrabInters;
-
-
     private Quaternion initialRotation;
     private Vector3 initialDirection;
 
 
-    public List<ControlPoint> controlPoints;
 
-
-    public void SelectControlPoint(ControlPoint cp)
+    private void Start()
     {
-        controlPoints.Clear();
-        controlPoints.Add(cp);
+        ModelEditingPanel.Instance.OnTransformTypeChanged.AddListener(TransformModeUpdated);
+        ModelEditingPanel.Instance.OnGizmoSpaceChanged.AddListener(GizmoSpaceUpdated);
+        ModelEditingPanel.Instance.OnControlPointsChanged.AddListener(ControlPointsUpdated);
+
+
+        xrGrabInters[0].selectEntered.AddListener((args) => SelectAxis(axes[1]));
+        xrGrabInters[0].selectExited.AddListener((args) => DeSelectAxis());
+
+        xrGrabInters[1].selectEntered.AddListener((args) => SelectAxis(axes[2]));
+        xrGrabInters[1].selectExited.AddListener((args) => DeSelectAxis());
+
+        xrGrabInters[2].selectEntered.AddListener((args) => SelectAxis(axes[3]));
+        xrGrabInters[2].selectExited.AddListener((args) => DeSelectAxis());
+    }
+
+
+    public void ControlPointsUpdated()
+    {
         UpdateGizmoGroupCenter();
     }
-    public void DeSelectControlPoint(ControlPoint cp)
-    {
-        if (controlPoints.Remove(cp))
-        {
-            UpdateGizmoGroupCenter();
-        }
 
-    }
-
-    public void MultiSelectControlPoint(ControlPoint cp)
-    {
-        if(controlPoints.Contains(cp) == false)
-        {
-            controlPoints.Add(cp);
-            UpdateGizmoGroupCenter();
-        }
-    }
     public void UpdateGizmoGroupCenter()
     {
-        if(controlPoints.Count == 0)
+        if(ModelEditingPanel.Instance.GetControlPoints().Count == 0)
         {
-            gameObject.SetActive(false);
+            axisParent.gameObject.SetActive(false);
             return;
         }
         else
         {
+            
             Vector3 sum = Vector3.zero;
 
-            foreach (ControlPoint point in controlPoints)
+            foreach (ControlPoint point in ModelEditingPanel.Instance.GetControlPoints())
             {
                 sum += point.GetCurrentPosition();
             }
 
-            this.transform.position = sum / controlPoints.Count;
+            axisParent.position = sum / ModelEditingPanel.Instance.GetControlPoints().Count;
 
+
+            if(ModelEditingPanel.Instance.currentTransformType != TransformType.Select &&
+                ModelEditingPanel.Instance.currentTransformType != TransformType.Free)
+            {
+                axisParent.gameObject.SetActive(true);
+            }
         }
 
     }
@@ -146,25 +112,12 @@ public class TransformGizmo : MonoBehaviour
 
 
 
-    public void GizmoUpdated()
+    public void GizmoSpaceUpdated()
     {
-        
+
     }
-
-
-    public void SelectGizmoSpace()
+    public void TransformModeUpdated()
     {
-        gizmoSpace = (GizmoSpace)gizmoSpaceDropdown.value;
-        GizmoUpdated();
-    }
-    public void SelectTransformMode()
-    {
-        transformType = (TransformType)transformTypeDropdown.value;
-        OnTransformTypeChanged.Invoke();
-
-
-
-
         xrGrabInters[0].trackPosition = true;
         xrGrabInters[1].trackPosition = true;
         xrGrabInters[2].trackPosition = true;
@@ -179,21 +132,21 @@ public class TransformGizmo : MonoBehaviour
 
         axes[0].gameObject.SetActive(true);
 
-        if (transformType == TransformType.Move)
+        if (ModelEditingPanel.Instance.currentTransformType == TransformType.Move)
         {
             for (int i = 0; i < axesCapsules.Length; i++)
             {
                 axesCapsules[i].enabled = true;
             }
         }
-        else if (transformType == TransformType.Scale)
+        else if (ModelEditingPanel.Instance.currentTransformType == TransformType.Scale)
         {
             for(int i = 0; i < axesCapsules.Length; i++)
             {
                 axesCapsules[i].enabled = false;
             }
         }
-        else if (transformType == TransformType.Rotate)
+        else if (ModelEditingPanel.Instance.currentTransformType == TransformType.Rotate)
         {
             axes[0].gameObject.SetActive(false);
             xrGrabTrans[0].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.X | XRGeneralGrabTransformer.ManipulationAxes.Y;
@@ -209,15 +162,8 @@ public class TransformGizmo : MonoBehaviour
             xrGrabInters[2].trackRotation = true;
         }
 
-        GizmoUpdated();
+        UpdateGizmoGroupCenter();
     }
-
-
-
-
-
-
-
 
 
     public void SelectAxis(Transform axis)
@@ -225,8 +171,9 @@ public class TransformGizmo : MonoBehaviour
         currentAxis = axis;
         previousPosition = currentAxis.position;
 
+        Debug.Log(currentAxis);
 
-        if (transformType == TransformType.Rotate)
+        if (ModelEditingPanel.Instance.currentTransformType == TransformType.Rotate)
         {
             initialRotation = currentAxis.localRotation;
 
@@ -235,7 +182,7 @@ public class TransformGizmo : MonoBehaviour
             var interactor = axis.GetComponent<XRGrabInteractable>().firstInteractorSelecting;
             if (interactor == null) return;
 
-            Plane rotationPlane = new Plane(rotationAxis, transform.position);
+            Plane rotationPlane = new Plane(rotationAxis, axisParent.position);
 
             Vector3 rayOrigin = interactor.transform.position;
             Vector3 rayDir = interactor.transform.forward;
@@ -244,7 +191,7 @@ public class TransformGizmo : MonoBehaviour
             {
                 Vector3 hitPoint = rayOrigin + rayDir * hitDist;
 
-                Vector3 grabDir = (hitPoint - transform.position).normalized;
+                Vector3 grabDir = (hitPoint - axisParent.position).normalized;
 
                 initialDirection = Vector3.ProjectOnPlane(grabDir, rotationAxis).normalized;
             }
@@ -267,6 +214,7 @@ public class TransformGizmo : MonoBehaviour
             axesCapsules[i].transform.localPosition = new Vector3();
         }
         isReset = true;
+        UpdateGizmoGroupCenter();
     }
 
 
@@ -286,24 +234,25 @@ public class TransformGizmo : MonoBehaviour
 
 
 
-        if (transformType == TransformType.Move)
+        if (ModelEditingPanel.Instance.currentTransformType == TransformType.Move)
         {
-            Vector3 localPos = currentAxis.position - transform.position;
+            Vector3 localPos = currentAxis.position - axisParent.position;
 
-            if (moveSnap > 0)
+            float snap = ModelEditingPanel.Instance.GetCurrentSnap();
+            if (snap > 0)
             {
-                localPos.x = Mathf.Round(localPos.x / moveSnap) * moveSnap;
-                localPos.y = Mathf.Round(localPos.y / moveSnap) * moveSnap;
-                localPos.z = Mathf.Round(localPos.z / moveSnap) * moveSnap;
+                localPos.x = Mathf.Round(localPos.x / snap) * snap;
+                localPos.y = Mathf.Round(localPos.y / snap) * snap;
+                localPos.z = Mathf.Round(localPos.z / snap) * snap;
             }
 
-            Vector3 snappedPos = transform.position + localPos;
+            Vector3 snappedPos = axisParent.position + localPos;
 
             Vector3 delta = snappedPos - previousPosition;
 
-            foreach (var cp in controlPoints)
+            foreach (var cp in ModelEditingPanel.Instance.GetControlPoints())
             {
-                cp.AddOffsetToControlPointPosition(delta);
+                cp.AddOffsetToControlPointAndVertsPosition(delta);
             }
 
             foreach (var axis in axes)
@@ -313,7 +262,7 @@ public class TransformGizmo : MonoBehaviour
 
             previousPosition = snappedPos;
         }
-        else if (transformType == TransformType.Scale)
+        else if (ModelEditingPanel.Instance.currentTransformType == TransformType.Scale)
         {
             if (currentAxis != null)
             {
@@ -331,14 +280,14 @@ public class TransformGizmo : MonoBehaviour
             }
           
         }
-        else if (transformType == TransformType.Rotate)
+        else if (ModelEditingPanel.Instance.currentTransformType == TransformType.Rotate)
         {
             Vector3 rotationAxis = GetAxisVector(currentAxis);
 
             var interactor = currentAxis.GetComponent<XRGrabInteractable>().firstInteractorSelecting;
             if (interactor == null) return;
 
-            Plane rotationPlane = new Plane(rotationAxis, transform.position);
+            Plane rotationPlane = new Plane(rotationAxis, axisParent.position);
 
             Vector3 rayOrigin = interactor.transform.position;
             Vector3 rayDir = interactor.transform.forward;
@@ -346,15 +295,15 @@ public class TransformGizmo : MonoBehaviour
             if (rotationPlane.Raycast(new Ray(rayOrigin, rayDir), out float hitDist))
             {
                 Vector3 hitPoint = rayOrigin + rayDir * hitDist;
-                Vector3 grabDir = (hitPoint - transform.position).normalized;
+                Vector3 grabDir = (hitPoint - axisParent.position).normalized;
                 Vector3 projected = Vector3.ProjectOnPlane(grabDir, rotationAxis).normalized;
 
                 float angle = Vector3.SignedAngle(initialDirection, projected, rotationAxis);
 
-                if (gizmoSpace == GizmoSpace.World)
-                    transform.rotation = Quaternion.AngleAxis(angle, rotationAxis) * transform.rotation;
+                if (ModelEditingPanel.Instance.currentGizmoSpace == GizmoSpace.World)
+                    axisParent.rotation = Quaternion.AngleAxis(angle, rotationAxis) * axisParent.rotation;
                 else
-                    transform.localRotation = initialRotation * Quaternion.AngleAxis(angle, rotationAxis);
+                    axisParent.localRotation = initialRotation * Quaternion.AngleAxis(angle, rotationAxis);
             }
         }
     }
@@ -363,17 +312,17 @@ public class TransformGizmo : MonoBehaviour
 
     private Vector3 GetAxisVector(Transform axis)
     {
-        if (gizmoSpace == GizmoSpace.World)
+        if (ModelEditingPanel.Instance.currentGizmoSpace == GizmoSpace.World)
         {
             if (axis == axes[0]) return Vector3.right;   
             if (axis == axes[1]) return Vector3.up;     
             if (axis == axes[2]) return Vector3.forward; 
         }
-        else if (gizmoSpace == GizmoSpace.Local)
+        else if (ModelEditingPanel.Instance.currentGizmoSpace == GizmoSpace.Local)
         {
-            if (axis == axes[0]) return transform.right;   
-            if (axis == axes[1]) return transform.up;      
-            if (axis == axes[2]) return transform.forward;
+            if (axis == axes[0]) return axisParent.right;   
+            if (axis == axes[1]) return axisParent.up;      
+            if (axis == axes[2]) return axisParent.forward;
         }
 
         return Vector3.up; 

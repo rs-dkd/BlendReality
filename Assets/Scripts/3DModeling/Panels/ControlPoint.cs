@@ -5,6 +5,38 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Transformers;
 using System.Linq;
 
+//public class VertControlPoint : ControlPoint
+//{
+//    public int[] vertices;
+
+//    public override void Initialize(int[] _vertices, Vector3 _normal)
+//    {
+//        vertices = _vertices;
+//        type = _type;
+//        normal = _normal;
+
+//        Setup();
+
+//    }
+
+
+//}
+//public class EdgeControlPoint : ControlPoint
+//{
+//    public int[] edges;
+
+//}
+//public class FaceControlPoint : ControlPoint
+//{
+//    public int[] faces;
+
+//}
+//public class PivotControlPoint : ControlPoint
+//{
+
+
+//}
+
 public class ControlPoint : MonoBehaviour
 {
     public EditMode type = EditMode.Vertex;
@@ -30,45 +62,68 @@ public class ControlPoint : MonoBehaviour
         return transform.position;
     }
 
-    //Creates control point
-
-    public void Initialize(int[] _vertices, Vector3 _normal, EditMode _type = EditMode.Vertex)
+    public virtual void Initialize(int[] _vertices, Vector3 _normal, EditMode _type = EditMode.Vertex)
     {
         vertices = _vertices;
         type = _type;
         normal = _normal;
 
 
-        if (rb == null)
-        {
-            SetupVRInteraction();
-            SetupVisualFeedback();
-        }
+        Setup();
     }
 
-
-    private void SetupVRInteraction()
+    public void Setup()
     {
-        grabInteractable = gameObject.AddComponent<XRGrabInteractable>();
-        grabTransformer = gameObject.AddComponent<XRGeneralGrabTransformer>();
-        rb = GetComponent<Rigidbody>();
         if (rb == null)
         {
-            rb = gameObject.AddComponent<Rigidbody>();
-        }
-        rb.isKinematic = true;
-        if (grabInteractable != null)
-        {
-            grabInteractable.trackPosition = false;
-            grabInteractable.trackRotation = false;
+            grabInteractable = gameObject.AddComponent<XRGrabInteractable>();
+            grabTransformer = gameObject.AddComponent<XRGeneralGrabTransformer>();
+            rb = GetComponent<Rigidbody>();
+            if (rb == null)
+            {
+                rb = gameObject.AddComponent<Rigidbody>();
+            }
+            rb.isKinematic = true;
             grabInteractable.trackScale = false;
             grabInteractable.throwOnDetach = false;
-            grabInteractable.selectEntered.AddListener(OnGrabStart);
-            //grabInteractable.selectExited.AddListener(OnGrabEnd);
-        }
+            SetAsSelectedAble();
 
-        ViewManager.Instance.OnControlPointSizeChanged.AddListener(ControlPointSizeChanged);
+            grabInteractable.selectEntered.AddListener(OnGrabStart);
+            grabInteractable.selectExited.AddListener(OnGrabEnd);
+            ViewManager.Instance.OnControlPointSizeChanged.AddListener(ControlPointSizeChanged);
+
+            meshRenderer = GetComponent<MeshRenderer>();
+            SetMaterialToDeselected();
+
+
+            ModelEditingPanel.Instance.OnTransformTypeChanged.AddListener(TransformTypeChanged);
+        }
     }
+
+
+    public void TransformTypeChanged()
+    {
+        if(ModelEditingPanel.Instance.currentTransformType == TransformType.Free)
+        {
+            SetAsMoveAble();
+        }
+        else
+        {
+            SetAsSelectedAble();
+        }
+    }
+    
+    public void SetAsSelectedAble()
+    {
+        grabInteractable.trackPosition = false;
+        grabInteractable.trackRotation = false;
+    }
+    public void SetAsMoveAble()
+    {
+        grabInteractable.trackPosition = true;
+        grabInteractable.trackRotation = true;
+    }
+
 
     public void Deactivate()
     {
@@ -81,11 +136,7 @@ public class ControlPoint : MonoBehaviour
         this.transform.localScale = Vector3.one * size;
     }
 
-    private void SetupVisualFeedback()
-    {
-        meshRenderer = GetComponent<MeshRenderer>();
-        SetMaterialToDeselected();
-    }
+
 
     public void SetMaterialToSelected()
     {
@@ -101,40 +152,58 @@ public class ControlPoint : MonoBehaviour
     public bool isSelected;
     private void OnGrabStart(UnityEngine.XR.Interaction.Toolkit.SelectEnterEventArgs args)
     {
-        if(isSelected == false)
+        if(ModelEditingPanel.Instance.currentTransformType == TransformType.Select)
         {
-            isSelected = true;
-            TransformGizmo.Instance.MultiSelectControlPoint(this);
-            SetMaterialToSelected();
+            if (isSelected == false)
+            {
+                isSelected = true;
+                ModelEditingPanel.Instance.MultiSelectControlPoint(this);
+                SetMaterialToSelected();
+            }
+            else
+            {
+                isSelected = false;
+                ModelEditingPanel.Instance.DeSelectControlPoint(this);
+                SetMaterialToDeselected();
+            }
         }
-        else
+        else if(ModelEditingPanel.Instance.currentTransformType == TransformType.Free)
         {
-            isSelected = false;
-            TransformGizmo.Instance.DeSelectControlPoint(this);
-            SetMaterialToDeselected();
+            previousPosition = this.transform.position;
+            isMovingVertex = true;
+        }
+    }
+    private void OnGrabEnd(UnityEngine.XR.Interaction.Toolkit.SelectExitEventArgs args)
+    {
+        if (ModelEditingPanel.Instance.currentTransformType == TransformType.Free)
+        {
+            isMovingVertex = false;
+        }
+    }
+    public bool isMovingVertex;
+    public Vector3 previousPosition;
+    private void Update()
+    {
+        if (isMovingVertex && isSelected)
+        {
+            SetVertexPosAsCPCurrentPos();
         }
     }
 
     public void AddOffsetToControlPointPosition(Vector3 offset)
     {
         this.transform.position += offset;
+    }
+    public void AddOffsetToControlPointAndVertsPosition(Vector3 offset)
+    {
+        AddOffsetToControlPointPosition(offset);
         ModelEditingPanel.Instance.AddOffsetToVertsPosition(vertices, offset);
+    }
+    public void SetVertexPosAsCPCurrentPos()
+    {
+        ModelEditingPanel.Instance.AddOffsetToSelectedControlPoints(this, this.transform.position - previousPosition);
+        previousPosition = this.transform.position;
     }
 
 
-
-
-
-    //void Update()
-    //{
-
-
-
-    //    //Update surface while dragging
-    //    //if (isBeingGrabbed && Vector3.Distance(transform.position, originalPosition) > 0.01f)
-    //    //{
-    //    //    ModelEditingPanel.Instance.OnControlPointMoved(vertices, originalPosition, transform.position);
-    //    //    originalPosition = transform.position;
-    //    //}
-    //}
 }

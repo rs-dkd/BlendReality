@@ -20,16 +20,15 @@ public class ModelData : MonoBehaviour
     public ProBuilderMesh editingModel;
     public Transform trans;
     private bool isSelected;
-    //public SmoothSurface smoothedMesh;
     public XRGrabInteractable interactable;
-    public XRGeneralGrabTransformer grabTransform;
+    public SnappingGrabTransformer grabTransform;
     public EditMode editMode;
     public TransformType transformType;
-
     private void Start()
     {
         ModelEditingPanel.Instance.OnEditModeChanged.AddListener(OnEditModeChanged);
-        TransformGizmo.Instance.OnTransformTypeChanged.AddListener(OnTransformTypeChanged);
+        ModelEditingPanel.Instance.OnTransformTypeChanged.AddListener(OnTransformTypeChanged);
+
     }
     public void DeleteModel()
     {
@@ -45,9 +44,9 @@ public class ModelData : MonoBehaviour
     
     public void OnTransformTypeChanged()
     {
-        transformType = TransformGizmo.Instance.transformType; 
+        transformType = ModelEditingPanel.Instance.currentTransformType; 
 
-        if (interactable == null) return;
+        if (isSelected == false) return;
 
         if (transformType == TransformType.Free)
         {
@@ -142,7 +141,7 @@ public class ModelData : MonoBehaviour
         rigid.isKinematic = true;
 
         interactable = this.AddComponent<XRGrabInteractable>();
-        grabTransform = this.AddComponent<XRGeneralGrabTransformer>();
+        grabTransform = this.AddComponent<SnappingGrabTransformer>();
         interactable.selectEntered.AddListener(OnGrab);
 
 
@@ -173,6 +172,7 @@ public class ModelData : MonoBehaviour
     }
     public void UpdateMeshEdit()
     {
+        editingModel.Refresh();
         editingModel.Refresh();
         //smoothedMesh.UpdateMesh();
     }
@@ -212,6 +212,8 @@ public class ModelData : MonoBehaviour
             }
         }
     }
+
+
 
 
     public void ShadingUpdated()

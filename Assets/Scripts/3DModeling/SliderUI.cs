@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using static UnityEngine.Rendering.DebugUI;
 
 public class SliderValueChangedEvent : UnityEvent<float> { }
 public class SliderUI : MonoBehaviour
@@ -19,7 +20,9 @@ public class SliderUI : MonoBehaviour
     public TMP_Text titleText;
     public string title;
     public bool isWholeNumbers;
-
+    public GameObject editGO;
+    public GameObject closeGO;
+    public bool followsUnitSystem = true;
 
     public void SetTitle(string _title)
     {
@@ -28,11 +31,10 @@ public class SliderUI : MonoBehaviour
     }
     public void SetMinMax(float min, float max)
     {
-        Debug.Log("fff");
-        Debug.Log(min);
-        Debug.Log(max);
+
         slider.minValue = min;
         slider.maxValue = max;
+
     }
     public void Show()
     {
@@ -55,8 +57,10 @@ public class SliderUI : MonoBehaviour
     {
         titleText.text = title;
         ViewManager.Instance.OnUnitSystemSizeChanged.AddListener(OnUnitSystemChanged);
+        OnUnitSystemChanged(ViewManager.Instance.unitSystem);
         slider.wholeNumbers = isWholeNumbers;
         OnEditToggle();
+        UpdateValueText();
     }
     public void OnEditToggle()
     {
@@ -64,11 +68,15 @@ public class SliderUI : MonoBehaviour
         {
             titleText.gameObject.SetActive(false);
             inputField.gameObject.SetActive(true);
+            closeGO.SetActive(true);
+            editGO.SetActive(false);
         }
         else
         {
             titleText.gameObject.SetActive(true);
             inputField.gameObject.SetActive(false);
+            closeGO.SetActive(false);
+            editGO.SetActive(true);
         }
     }
     public void OnUnitSystemChanged(GridUnitSystem _unitSystem)
@@ -79,16 +87,23 @@ public class SliderUI : MonoBehaviour
     }
     public void OnSliderUpdated()
     {
-        if(unitSystem == GridUnitSystem.Imperial)
+        UpdateValueText();
+
+        OnSliderValueChangedEvent.Invoke(slider.value);
+    }
+
+
+    public void UpdateValueText()
+    {
+
+        if (unitSystem == GridUnitSystem.Imperial && followsUnitSystem)
         {
             valueText.text = MetricConverter.ToFeetAndInches(slider.value);
         }
         else
         {
-            valueText.text = slider.value.ToString();
+            valueText.text = Math.Round(slider.value, 3).ToString();
         }
-
-        OnSliderValueChangedEvent.Invoke(slider.value);
     }
 
     public void OnInputFieldUpdated()

@@ -60,6 +60,7 @@ public class ModelCreator : MonoBehaviour
         ySubDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
         zSubDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
 
+        UniformSizeToggleChanged();
     }
 
 
@@ -80,15 +81,20 @@ public class ModelCreator : MonoBehaviour
 
     public void ModelTypeSelected(Toggle toggle)
     {
+        Debug.Log(toggle);
+        ModelType type = currentShapeType;
         if (Enum.TryParse(toggle.name, out currentShapeType))
         {
-            Debug.Log(currentShapeType);
-            UniformChangedUpdateSliderValues();
-            UpdateSizeSlidersUI();
-            UpdateSubDSlidersMinMax();
-            UpdateSubDSliders();
+            if (type != currentShapeType || toggle.isOn)
+            {
+                UniformChangedUpdateSliderValues();
+                UpdateSizeSlidersUI();
+                UpdateSubDSlidersMinMax();
+                UpdateSubDSliders();
 
-            CreateOrUpdateModel();
+                CreateOrUpdateModel();
+            }
+ 
         }
     }
     public void UniformSizeToggleChanged()

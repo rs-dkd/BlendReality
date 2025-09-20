@@ -2,23 +2,29 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.ProBuilder;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
+using Toggle = UnityEngine.UI.Toggle;
 
 public enum EditMode
 {
     Object,Pivot,Vertex,Edge,Face
 }
+public class ScaleSnapChangedEvent : UnityEvent<float> { }
+public class RotateSnapChangedEvent : UnityEvent<float> { }
+public class MoveSnapChangedEvent : UnityEvent<float> { }
+public class ControlPointsChangedEvent : UnityEvent { }
+public class GizmoSpaceChangedEvent : UnityEvent { }
+public class TransformTypeChangedEvent : UnityEvent { }
 public class EditModeChangedEvent : UnityEvent { }
 public class ModelEditingPanel : MonoBehaviour
 {
     public static ModelEditingPanel Instance;
-    public EditModeChangedEvent OnEditModeChanged = new EditModeChangedEvent();
-
     private void Awake()
     {
         if (Instance == null)
@@ -29,86 +35,155 @@ public class ModelEditingPanel : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
     }
 
-    public TMP_Dropdown editModeDropdown;
 
-    public void ChangeEditMode()
-    {
-        currentEditMode = (EditMode)editModeDropdown.value;
-        OnEditModeChanged.Invoke();
-        UpdateEditModel();
-    }
-
-    public ModelData selectedModel;
-
-    public Material surfaceMaterial;
-    public Material controlPointMaterial;
-    public Material controlPointGrabbedMaterial;
-    public float controlPointSize = 0.05f;
-
-
-
-    public List<ControlPoint> allControlPoints = new List<ControlPoint>();
-    public List<ControlPoint> inUseControlPoints = new List<ControlPoint>();
+    public ScaleSnapChangedEvent OnScaleSnapChanged = new ScaleSnapChangedEvent();
+    public RotateSnapChangedEvent OnRotateSnapChanged = new RotateSnapChangedEvent();
+    public MoveSnapChangedEvent OnMoveSnapChanged = new MoveSnapChangedEvent();
+    public ControlPointsChangedEvent OnControlPointsChanged = new ControlPointsChangedEvent();
+    public EditModeChangedEvent OnEditModeChanged = new EditModeChangedEvent();
+    public TransformTypeChangedEvent OnTransformTypeChanged = new TransformTypeChangedEvent();
+    public GizmoSpaceChangedEvent OnGizmoSpaceChanged = new GizmoSpaceChangedEvent();
+    public ToggleGroupUI editModeToggleGroup;
+    public ToggleGroupUI transformTypeToggleGroup;
+    public ToggleGroupUI gizmoSpaceToggleGroup;
     public EditMode currentEditMode = EditMode.Object;
+    public GizmoSpace currentGizmoSpace = GizmoSpace.World;
+    public TransformType currentTransformType = TransformType.Free;
     void Start()
     {
-        if (surfaceMaterial == null)
-        {
-            surfaceMaterial = CreateDefaultSurfaceMaterial();
-        }
+        editModeToggleGroup.OnToggleGroupChanged.AddListener(OnEditModeToggleGroupChanged);
+        transformTypeToggleGroup.OnToggleGroupChanged.AddListener(OnTransformTypeToggleGroupChanged);
+        gizmoSpaceToggleGroup.OnToggleGroupChanged.AddListener(OnGizmoSpaceToggleGroupChanged);
 
-        if (controlPointMaterial == null)
+    }
+    public void OnGizmoSpaceToggleGroupChanged(Toggle toggle)
+    {
+        if (Enum.TryParse(toggle.name, out currentGizmoSpace))
         {
-            controlPointMaterial = CreateDefaultControlPointMaterial();
-        }
-
-        if (controlPointGrabbedMaterial == null)
-        {
-            controlPointGrabbedMaterial = CreateDefaultGrabbedMaterial();
+            OnGizmoSpaceChanged.Invoke();
         }
     }
-
-
-
-
-
-
-    private Material CreateDefaultSurfaceMaterial()
+    public void OnTransformTypeToggleGroupChanged(Toggle toggle)
     {
-        Material mat = new Material(Shader.Find("Standard"));
-        mat.color = new Color(0.2f, 0.7f, 1f, 0.7f);
-        mat.SetFloat("_Mode", 3);
-        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        mat.SetInt("_ZWrite", 0);
-        mat.DisableKeyword("_ALPHATEST_ON");
-        mat.EnableKeyword("_ALPHABLEND_ON");
-        mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        mat.renderQueue = 3000;
-        return mat;
+        if (Enum.TryParse(toggle.name, out currentTransformType))
+        {
+            OnTransformTypeChanged.Invoke();
+        }
+    }
+    public void OnEditModeToggleGroupChanged(Toggle toggle)
+    {
+        if (Enum.TryParse(toggle.name, out currentEditMode))
+        {
+            OnEditModeChanged.Invoke();
+            UpdateEditModel();
+        }
     }
 
-    private Material CreateDefaultControlPointMaterial()
+
+
+    public GameObject moveSnappingPanel;
+    public GameObject rotateSnappingPanel;
+    public GameObject scaleSnappingPanel;
+    public void TransformTypeChanged()
     {
-        Material mat = new Material(Shader.Find("Standard"));
-        mat.color = Color.red;
-        mat.SetFloat("_Metallic", 0.3f);
-        mat.SetFloat("_Smoothness", 0.7f);
-        return mat;
+        moveSnappingPanel.SetActive(false);
+        rotateSnappingPanel.SetActive(false);
+        scaleSnappingPanel.SetActive(false);
+        if (currentTransformType == TransformType.Move)
+        {
+            moveSnappingPanel.SetActive(true);
+
+        }
+        else if (currentTransformType == TransformType.Rotate)
+        {
+            rotateSnappingPanel.SetActive(true);
+        }
+        else if (currentTransformType == TransformType.Scale)
+        {
+            scaleSnappingPanel.SetActive(true);
+
+        }
     }
 
-    private Material CreateDefaultGrabbedMaterial()
+
+
+
+
+    private float moveSnap = 0;
+    private float rotateSnap = 0;
+    private float scaleSnap = 0;
+    public void UpdateMoveSnap(float newSnap)
     {
-        Material mat = new Material(Shader.Find("Standard"));
-        mat.color = Color.yellow;
-        mat.SetFloat("_Metallic", 0.8f);
-        mat.SetFloat("_Smoothness", 0.9f);
-        mat.EnableKeyword("_EMISSION");
-        mat.SetColor("_EmissionColor", Color.yellow * 0.3f);
-        return mat;
+        moveSnap = newSnap;
+        OnMoveSnapChanged.Invoke(moveSnap);
     }
+    public void UpdateRotateSnap(float newSnap)
+    {
+        rotateSnap = newSnap;
+        OnRotateSnapChanged.Invoke(rotateSnap);
+    }
+    public void UpdateScaleSnap(float newSnap)
+    {
+        scaleSnap = newSnap;
+        OnScaleSnapChanged.Invoke(scaleSnap);
+    }
+    public float GetMoveSnap()
+    {
+        return moveSnap;
+    }
+    public float GetRotateSnap()
+    {
+        return rotateSnap;
+    }
+    public float GetScaleSnap()
+    {
+        return scaleSnap;
+    }
+
+    public float GetCurrentSnap()
+    {
+        if(currentTransformType == TransformType.Rotate) return rotateSnap;
+        else if(currentTransformType == TransformType.Scale) return scaleSnap;
+        else
+        {
+            return moveSnap;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public ModelData selectedModel;
+    public float controlPointSize = 0.05f;
+    public List<ControlPoint> allControlPoints = new List<ControlPoint>();
+    public List<ControlPoint> inUseControlPoints = new List<ControlPoint>();
+
+
+
+
 
     public void UpdateEditModel()
     {
@@ -212,14 +287,7 @@ public class ModelEditingPanel : MonoBehaviour
     }
 
 
-    private void CreateControlPointForEdge(int[] vertexIndices, EditMode type, Vector3 position, ref int index, Vector3 _normal)
-    {
 
-    }
-    private void CreateControlPointForFace(Face face, EditMode type, Vector3 position, ref int index, Vector3 _normal)
-    {
-
-    }
     private void CreateControlPointForVertex(int[] vertexIndices, Vector3 position, ref int index, Vector3 _normal)
     {
         ControlPoint controlPointScript;
@@ -251,27 +319,12 @@ public class ModelEditingPanel : MonoBehaviour
             controlPointGO.name = $"ControlPoint_{index}";
             controlPointGO.transform.localScale = Vector3.one * controlPointSize;
 
-            MeshRenderer renderer = controlPointGO.GetComponent<MeshRenderer>();
-            if (renderer != null) renderer.material = controlPointMaterial;
-
             controlPointScript = controlPointGO.AddComponent<ControlPoint>();
-            controlPointScript.normalMaterial = controlPointMaterial;
-            controlPointScript.grabbedMaterial = controlPointGrabbedMaterial;
-            //controlPointScript.SetNormalMaterial();
 
             allControlPoints.Add(controlPointScript);
         }
         return controlPointScript;
     }
-
-
-
-
-
-
-
-
-
 
 
     private ControlPoint CreateOrReuseControlPoint(int[] vertexIndices, EditMode type, Vector3 position, ref int index, Vector3 _normal)
@@ -290,14 +343,7 @@ public class ModelEditingPanel : MonoBehaviour
             controlPointGO.name = $"ControlPoint_{index}";
             controlPointGO.transform.localScale = Vector3.one * controlPointSize;
 
-            MeshRenderer renderer = controlPointGO.GetComponent<MeshRenderer>();
-            if (renderer != null) renderer.material = controlPointMaterial;
-
             controlPointScript = controlPointGO.AddComponent<ControlPoint>();
-            controlPointScript.normalMaterial = controlPointMaterial;
-            controlPointScript.grabbedMaterial = controlPointGrabbedMaterial;
-            //controlPointScript.SetNormalMaterial();
-
             allControlPoints.Add(controlPointScript);
         }
 
@@ -358,12 +404,75 @@ public class ModelEditingPanel : MonoBehaviour
     }
 
 
+    public void UpdateNonSelectedControlPointsPositions()
+    {
+        if (currentEditMode != EditMode.Edge && currentEditMode != EditMode.Face) return;
+
+        List<Vector3> allPositions = selectedModel.GetVerts();
+        foreach (ControlPoint cp in inUseControlPoints)
+        {
+            if (cp.vertices == null || cp.vertices.Length == 0 || cp.isSelected == true) continue;
+
+            Vector3 newPosition = Vector3.zero;
+
+            foreach (int vertexIndex in cp.vertices)
+            {
+                if (vertexIndex < allPositions.Count)
+                {
+                    newPosition += allPositions[vertexIndex];
+                }
+            }
+
+            newPosition /= cp.vertices.Length;
+
+            cp.transform.position = newPosition;
+        }
+    }
 
 
 
+    public List<ControlPoint> controlPoints;
+    public List<ControlPoint> GetControlPoints()
+    {
+        return controlPoints;
+    }
+    public void SelectControlPoint(ControlPoint cp)
+    {
+        controlPoints.Clear();
+        controlPoints.Add(cp);
+        OnControlPointsChanged.Invoke();
+    }
+    public void DeSelectControlPoint(ControlPoint cp)
+    {
+        if (controlPoints.Remove(cp))
+        {
+            OnControlPointsChanged.Invoke();
+        }
+
+    }
+    public void MultiSelectControlPoint(ControlPoint cp)
+    {
+        if (controlPoints.Contains(cp) == false)
+        {
+            controlPoints.Add(cp);
+            OnControlPointsChanged.Invoke();
+        }
+    }
+
+    public void AddOffsetToSelectedControlPoints(ControlPoint currentCP, Vector3 offset)
+    {
+        AddOffsetToVertsPosition(currentCP.vertices, offset);
+        for (int i = 0; i < controlPoints.Count; i++)
+        {
+            if (controlPoints[i].isSelected && currentCP != controlPoints[i])
+            {
+                Debug.Log("Moving");
+                AddOffsetToVertsPosition(controlPoints[i].vertices, offset);
+
+                controlPoints[i].AddOffsetToControlPointPosition(offset);
+            }
 
 
-
-
-
+        }
+    }
 }
