@@ -46,6 +46,10 @@ public class TransformGizmo : MonoBehaviour
     public CapsuleCollider[] axesCapsules;
     public XRGeneralGrabTransformer[] xrGrabTrans;
     public XRGrabInteractable[] xrGrabInters;
+
+
+
+
     private Quaternion initialRotation;
     private Vector3 initialDirection;
 
