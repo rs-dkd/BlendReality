@@ -46,19 +46,110 @@ public class ModelEditingPanel : MonoBehaviour
     public EditModeChangedEvent OnEditModeChanged = new EditModeChangedEvent();
     public TransformTypeChangedEvent OnTransformTypeChanged = new TransformTypeChangedEvent();
     public GizmoSpaceChangedEvent OnGizmoSpaceChanged = new GizmoSpaceChangedEvent();
+
+
+
+
     public ToggleGroupUI editModeToggleGroup;
     public ToggleGroupUI transformTypeToggleGroup;
     public ToggleGroupUI gizmoSpaceToggleGroup;
+
+    public ToggleGroupUI moveSnapToggleGroup;
+    public ToggleGroupUI rotateSnapToggleGroup;
+    public ToggleGroupUI scaleSnapToggleGroup;
+
+
+
     public EditMode currentEditMode = EditMode.Object;
     public GizmoSpace currentGizmoSpace = GizmoSpace.World;
     public TransformType currentTransformType = TransformType.Free;
+
+
+    public GameObject[] snappingOptions;
+    public bool showSnap = false;
+    public void SnapToggle()
+    {
+        showSnap = !showSnap;
+        for (int i = 0; i < snappingOptions.Length; i++)
+        {
+            if (showSnap)
+            {
+                snappingOptions[i].gameObject.SetActive(true);
+            }
+            else
+            {
+                snappingOptions[i].gameObject.SetActive(false);
+
+            }
+        }
+
+        if(showSnap == false)
+        {
+            UpdateMoveSnap(0);
+            UpdateRotateSnap(0);
+            UpdateScaleSnap(0);
+        }
+    }
+
+
+
+
     void Start()
     {
         editModeToggleGroup.OnToggleGroupChanged.AddListener(OnEditModeToggleGroupChanged);
         transformTypeToggleGroup.OnToggleGroupChanged.AddListener(OnTransformTypeToggleGroupChanged);
         gizmoSpaceToggleGroup.OnToggleGroupChanged.AddListener(OnGizmoSpaceToggleGroupChanged);
 
+
+        moveSnapToggleGroup.Setup(moveSnapOptions);
+        rotateSnapToggleGroup.Setup(rotateSnapOptions);
+        scaleSnapToggleGroup.Setup(scaleSnapOptions);
+
+
+        moveSnapToggleGroup.OnToggleGroupChanged.AddListener(OnMoveSnapToggleGroupChanged);
+        rotateSnapToggleGroup.OnToggleGroupChanged.AddListener(OnRotateSnapToggleGroupChanged);
+        scaleSnapToggleGroup.OnToggleGroupChanged.AddListener(OnScaleSnapToggleGroupChanged);
+
     }
+    public String[] moveSnapOptions = new String[] { "None","1cm","10cm","1m" };
+    public float[] moveSnapValues = new float[] { 0,0.01f,0.1f,1 };
+    public String[] rotateSnapOptions = new String[] { "None", "5°", "15°", "45°" };
+    public float[] rotateSnapValues = new float[] { 0, 5, 15, 45 };
+    public String[] scaleSnapOptions = new String[] { "None","10%","50%","100%" };
+    public float[] scaleSnapValues = new float[] { 0,0.1f,0.5f,1 };
+    public void OnMoveSnapToggleGroupChanged(Toggle toggle)
+    {
+        for (int i = 0;i < moveSnapOptions.Length;i++)
+        {
+            if (moveSnapOptions[i] == toggle.name)
+            {
+                UpdateMoveSnap(moveSnapValues[i]);
+            }
+        }
+    }
+    public void OnRotateSnapToggleGroupChanged(Toggle toggle)
+    {
+        for (int i = 0; i < rotateSnapOptions.Length; i++)
+        {
+            if (rotateSnapOptions[i] == toggle.name)
+            {
+                UpdateMoveSnap(rotateSnapValues[i]);
+            }
+        }
+    }
+    public void OnScaleSnapToggleGroupChanged(Toggle toggle)
+    {
+        for (int i = 0; i < scaleSnapOptions.Length; i++)
+        {
+            if (scaleSnapOptions[i] == toggle.name)
+            {
+                UpdateMoveSnap(scaleSnapValues[i]);
+            }
+        }
+    }
+
+
+
     public void OnGizmoSpaceToggleGroupChanged(Toggle toggle)
     {
         if (Enum.TryParse(toggle.name, out currentGizmoSpace))
@@ -439,6 +530,7 @@ public class ModelEditingPanel : MonoBehaviour
     public void SelectControlPoint(ControlPoint cp)
     {
         controlPoints.Clear();
+        cp.SetMaterialToSelected();
         controlPoints.Add(cp);
         OnControlPointsChanged.Invoke();
     }
@@ -446,6 +538,7 @@ public class ModelEditingPanel : MonoBehaviour
     {
         if (controlPoints.Remove(cp))
         {
+            cp.SetMaterialToDeselected();
             OnControlPointsChanged.Invoke();
         }
 
@@ -454,6 +547,7 @@ public class ModelEditingPanel : MonoBehaviour
     {
         if (controlPoints.Contains(cp) == false)
         {
+            cp.SetMaterialToSelected();
             controlPoints.Add(cp);
             OnControlPointsChanged.Invoke();
         }

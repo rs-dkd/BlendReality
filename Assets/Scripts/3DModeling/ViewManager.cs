@@ -170,7 +170,6 @@ public class ViewManager : MonoBehaviour
 
 
 
-    public TMPro.TMP_Dropdown shadingDropdown;
     public ShadingType currentShadingType;
     public ShadingType GetShadingType()
     {

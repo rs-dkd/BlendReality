@@ -18,6 +18,7 @@ public class ToggleGroupUI : MonoBehaviour
     public GameObject togglePrefab;
     public ToggleGroupChangedEvent OnToggleGroupChanged = new ToggleGroupChangedEvent();
     public bool allowOff = false;
+    public bool createOnAwake = true;
     public void OnToggleSelected(Toggle toggle)
     {
         if (toggle.isOn)
@@ -28,6 +29,17 @@ public class ToggleGroupUI : MonoBehaviour
 
     private void Awake()
     {
+        if (createOnAwake)
+        {
+            Setup();
+        }
+    }
+    public void Setup(string[] _options = null) { 
+        if(_options != null)
+        {
+            options = _options;
+        }
+
         Toggle activeToggle = null;
         toggleGroup.allowSwitchOff = allowOff;
         foreach (String value in options)

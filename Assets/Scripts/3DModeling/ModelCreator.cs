@@ -34,6 +34,8 @@ public class ModelCreator : MonoBehaviour
     public SliderUI ySizeSlider;
     public SliderUI zSizeSlider;
 
+    public Transform meshCreationPoint;
+
 
     public SliderUI subDivisionSlider;
     public SliderUI xSubDivisionSlider;
@@ -59,6 +61,7 @@ public class ModelCreator : MonoBehaviour
         xSubDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
         ySubDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
         zSubDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
+
 
         UniformSizeToggleChanged();
     }
@@ -87,16 +90,37 @@ public class ModelCreator : MonoBehaviour
         {
             if (type != currentShapeType || toggle.isOn)
             {
+                ResetSliders();
                 UniformChangedUpdateSliderValues();
                 UpdateSizeSlidersUI();
                 UpdateSubDSlidersMinMax();
                 UpdateSubDSliders();
 
                 CreateOrUpdateModel();
+
+
+
             }
  
         }
     }
+
+    public void ResetSliders()
+    {
+        sizeSlider.SetValue(1);
+        xSizeSlider.SetValue(1);
+        ySizeSlider.SetValue(1);
+        zSizeSlider.SetValue(1);
+        subDivisionSlider.SetValue(1);
+        xSubDivisionSlider.SetValue(1);
+        ySubDivisionSlider.SetValue(1);
+        zSubDivisionSlider.SetValue(1);
+
+
+    }
+
+
+
     public void UniformSizeToggleChanged()
     {
         UniformChangedUpdateSliderValues();
@@ -245,7 +269,7 @@ public class ModelCreator : MonoBehaviour
         mesh = CreateModelByType(currentShapeType);
         currentModel = mesh.gameObject.AddComponent<ModelData>();
         currentModel.SetupModel(mesh);
-        currentModel.SetPosition(new Vector3(0, 1, 2));
+        currentModel.SetPosition(meshCreationPoint.position);
         SizeSliderUpdated(1);
         SelectionManager.Instance.SelectModel(currentModel);
     }
@@ -496,6 +520,7 @@ public class ModelCreator : MonoBehaviour
     }
     private void SubDSliderUpdated(float val)
     {
+        Debug.Log("fwqfe");
         if (currentModel != null)
         {
             ProBuilderMesh mesh = CreateModelByType(currentShapeType);

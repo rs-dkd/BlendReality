@@ -1,96 +1,88 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using UnityEngine.InputSystem;
 
+
+public enum ControllerInputType
+{
+    LeftPrimary, RightPrimary, LeftSecondary, RightSecondary
+}
 public class UIPanel : MonoBehaviour
 {
-    [Header("Menu References")]
-    public Canvas menuCanvas;
-    public RectTransform menuPanel;
-    public Button closeButton;
-
-    [Header("Animation Settings")]
-    public float animationDuration = 0.3f;
-    public AnimationCurve easeInOut = AnimationCurve.EaseInOut(0, 0, 1, 1);
-
+    public GameObject panel;
     private bool isPanelOpen = false;
-    private Vector3 closedScale = Vector3.zero;
-    private Vector3 openScale = Vector3.one;
-
+    public ControllerInputType inputType;
+    private InputAction menuAction;
+    public bool isLeftSide;
     void Start()
     {
 
 
-        if (closeButton != null)
-            closeButton.onClick.AddListener(() => ToggleMenu());
-
-        menuCanvas.gameObject.SetActive(false);
-        menuPanel.localScale = closedScale;
+        panel.SetActive(false);
+        SetupInput();
     }
-
+    public void SetSide(bool _isLeftSide)
+    {
+        isLeftSide = _isLeftSide;
+    }
+    public bool GetSide()
+    {
+        return isLeftSide;
+    }
     public void ToggleMenu()
     {
         if (isPanelOpen)
             CloseMenu();
         else
-            OpenMenu();
+            PanelManager.Instance.OpenPanel(this);
     }
 
     public void OpenMenu()
     {
-        menuCanvas.gameObject.SetActive(true);
-        StartCoroutine(AnimateMenuScale(closedScale, openScale));
-        StartCoroutine(AnimateMenuFade(0f, 1f));
+        Debug.Log("Open" + gameObject.name);
+        panel.SetActive(true);
         isPanelOpen = true;
     }
 
     public void CloseMenu()
     {
-        StartCoroutine(AnimateMenuScale(openScale, closedScale));
-        StartCoroutine(AnimateMenuFade(1f, 0f));
+        Debug.Log("Close" + gameObject.name);
+        panel.SetActive(false);
         isPanelOpen = false;
     }
 
-    IEnumerator AnimateMenuScale(Vector3 fromScale, Vector3 toScale)
+
+
+
+    public InputActionReference menuButtonAction;
+
+
+    void SetupInput()
     {
-        float elapsedTime = 0f;
-
-        while (elapsedTime < animationDuration)
+        menuAction = new InputAction("MenuButton", InputActionType.Button);
+        if (inputType == ControllerInputType.LeftPrimary)
         {
-            float t = elapsedTime / animationDuration;
-            float easedT = easeInOut.Evaluate(t);
-
-            menuPanel.localScale = Vector3.Lerp(fromScale, toScale, easedT);
-
-            elapsedTime += Time.deltaTime;
-            yield return null;
+            menuAction.AddBinding("<XRController>{LeftHand}/primaryButton");
         }
-
-        menuPanel.localScale = toScale;
-
-        if (toScale == closedScale)
+        else if (inputType == ControllerInputType.RightPrimary)
         {
-            menuCanvas.gameObject.SetActive(false);
+            menuAction.AddBinding("<XRController>{RightHand}/primaryButton");
         }
+        else if (inputType == ControllerInputType.LeftSecondary)
+        {
+            menuAction.AddBinding("<XRController>{LeftHand}/secondaryButton");
+        }
+        else if (inputType == ControllerInputType.RightSecondary)
+        {
+            menuAction.AddBinding("<XRController>{RightHand}/secondaryButton");
+        }
+        menuAction.Enable();
+        menuAction.performed += OnMenuButtonPressed;
     }
 
-    IEnumerator AnimateMenuFade(float fromAlpha, float toAlpha)
+    void OnMenuButtonPressed(InputAction.CallbackContext context)
     {
-        CanvasGroup canvasGroup = menuPanel.GetComponent<CanvasGroup>();
-        if (canvasGroup == null)
-            canvasGroup = menuPanel.gameObject.AddComponent<CanvasGroup>();
-
-        float elapsedTime = 0f;
-
-        while (elapsedTime < animationDuration)
-        {
-            float t = elapsedTime / animationDuration;
-            canvasGroup.alpha = Mathf.Lerp(fromAlpha, toAlpha, t);
-
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        canvasGroup.alpha = toAlpha;
+        ToggleMenu();
     }
 }

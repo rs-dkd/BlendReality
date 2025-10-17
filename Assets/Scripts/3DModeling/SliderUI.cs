@@ -15,7 +15,8 @@ public class SliderUI : MonoBehaviour
     public Slider slider;
     public TMP_InputField inputField;
     public GridUnitSystem unitSystem;
-
+    public Transform keyboardTransLeft;
+    public Transform keyboardTransRight;
     public Toggle editToggle;
     public TMP_Text titleText;
     public string title;
@@ -23,6 +24,19 @@ public class SliderUI : MonoBehaviour
     public GameObject editGO;
     public GameObject closeGO;
     public bool followsUnitSystem = true;
+    public bool isLeftPanel;
+    public Transform GetKeyboardParent()
+    {
+        if (isLeftPanel)
+        {
+            return keyboardTransRight;
+        }
+        else
+        {
+            return keyboardTransLeft;
+        }
+        
+    }
 
     public void SetTitle(string _title)
     {
@@ -66,19 +80,36 @@ public class SliderUI : MonoBehaviour
     {
         if (editToggle.isOn)
         {
-            titleText.gameObject.SetActive(false);
-            inputField.gameObject.SetActive(true);
-            closeGO.SetActive(true);
-            editGO.SetActive(false);
+            ActivateEdit();
+            InputFieldManager.Instance.SelectInputField(this);
+
         }
         else
         {
-            titleText.gameObject.SetActive(true);
-            inputField.gameObject.SetActive(false);
-            closeGO.SetActive(false);
-            editGO.SetActive(true);
+            DeactivateEdit();
+            InputFieldManager.Instance.DeselectInputField(this);
         }
     }
+
+    public void DeactivateEdit()
+    {
+        titleText.gameObject.SetActive(true);
+        inputField.gameObject.SetActive(false);
+        closeGO.SetActive(false);
+        editGO.SetActive(true);
+    }
+    public void ActivateEdit()
+    {
+        titleText.gameObject.SetActive(false);
+        inputField.gameObject.SetActive(true);
+        closeGO.SetActive(true);
+        editGO.SetActive(false);
+    }
+
+
+
+
+
     public void OnUnitSystemChanged(GridUnitSystem _unitSystem)
     {
         unitSystem = _unitSystem;
@@ -95,6 +126,7 @@ public class SliderUI : MonoBehaviour
 
     public void UpdateValueText()
     {
+        Debug.Log("UpdateValueText");
 
         if (unitSystem == GridUnitSystem.Imperial && followsUnitSystem)
         {
@@ -108,10 +140,24 @@ public class SliderUI : MonoBehaviour
 
     public void OnInputFieldUpdated()
     {
+        Debug.Log("OnInputFieldUpdated");
         valueText.text = inputField.text.ToString();
         if (float.TryParse(valueText.text, out float convertedValue))
         {
             OnSliderValueChangedEvent.Invoke(convertedValue);
+        }
+    }
+
+
+    public bool IsInputNumber()
+    {
+        if(inputField.contentType == TMP_InputField.ContentType.DecimalNumber || inputField.contentType == TMP_InputField.ContentType.IntegerNumber)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 }

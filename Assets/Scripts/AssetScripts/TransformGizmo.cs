@@ -61,15 +61,18 @@ public class TransformGizmo : MonoBehaviour
         ModelEditingPanel.Instance.OnGizmoSpaceChanged.AddListener(GizmoSpaceUpdated);
         ModelEditingPanel.Instance.OnControlPointsChanged.AddListener(ControlPointsUpdated);
 
-
-        xrGrabInters[0].selectEntered.AddListener((args) => SelectAxis(axes[1]));
+        xrGrabInters[0].selectEntered.AddListener((args) => SelectAxis(axes[0]));
         xrGrabInters[0].selectExited.AddListener((args) => DeSelectAxis());
 
-        xrGrabInters[1].selectEntered.AddListener((args) => SelectAxis(axes[2]));
+
+        xrGrabInters[1].selectEntered.AddListener((args) => SelectAxis(axes[1]));
         xrGrabInters[1].selectExited.AddListener((args) => DeSelectAxis());
 
-        xrGrabInters[2].selectEntered.AddListener((args) => SelectAxis(axes[3]));
+        xrGrabInters[2].selectEntered.AddListener((args) => SelectAxis(axes[2]));
         xrGrabInters[2].selectExited.AddListener((args) => DeSelectAxis());
+
+        xrGrabInters[3].selectEntered.AddListener((args) => SelectAxis(axes[3]));
+        xrGrabInters[3].selectExited.AddListener((args) => DeSelectAxis());
     }
 
 
@@ -122,17 +125,30 @@ public class TransformGizmo : MonoBehaviour
     }
     public void TransformModeUpdated()
     {
+        if(ModelEditingPanel.Instance.currentTransformType != TransformType.Scale || ModelEditingPanel.Instance.currentTransformType != TransformType.Move || ModelEditingPanel.Instance.currentTransformType != TransformType.Rotate)
+        {
+            axisParent.gameObject.SetActive(false);
+        }
+        else
+        {
+            axisParent.gameObject.SetActive(true);
+        }
+
         xrGrabInters[0].trackPosition = true;
         xrGrabInters[1].trackPosition = true;
         xrGrabInters[2].trackPosition = true;
+        xrGrabInters[3].trackPosition = true;
+
         xrGrabInters[0].trackRotation = false;
         xrGrabInters[1].trackRotation = false;
         xrGrabInters[2].trackRotation = false;
+        xrGrabInters[3].trackRotation = false;
 
 
-        xrGrabTrans[0].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.X;
-        xrGrabTrans[1].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.Y;
-        xrGrabTrans[2].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.Z;
+        xrGrabTrans[0].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.All;
+        xrGrabTrans[1].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.X;
+        xrGrabTrans[2].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.Y;
+        xrGrabTrans[3].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.Z;
 
         axes[0].gameObject.SetActive(true);
 
@@ -153,17 +169,21 @@ public class TransformGizmo : MonoBehaviour
         else if (ModelEditingPanel.Instance.currentTransformType == TransformType.Rotate)
         {
             axes[0].gameObject.SetActive(false);
-            xrGrabTrans[0].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.X | XRGeneralGrabTransformer.ManipulationAxes.Y;
-            xrGrabTrans[1].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.Y | XRGeneralGrabTransformer.ManipulationAxes.Z;
-            xrGrabTrans[2].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.Z | XRGeneralGrabTransformer.ManipulationAxes.X;
+            xrGrabTrans[0].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.All;
+
+            xrGrabTrans[1].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.X | XRGeneralGrabTransformer.ManipulationAxes.Y;
+            xrGrabTrans[2].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.Y | XRGeneralGrabTransformer.ManipulationAxes.Z;
+            xrGrabTrans[3].permittedDisplacementAxes = XRGeneralGrabTransformer.ManipulationAxes.Z | XRGeneralGrabTransformer.ManipulationAxes.X;
 
             xrGrabInters[0].trackPosition = false;
             xrGrabInters[1].trackPosition = false;
             xrGrabInters[2].trackPosition = false;
+            xrGrabInters[3].trackPosition = false;
 
             xrGrabInters[0].trackRotation = true;
             xrGrabInters[1].trackRotation = true;
             xrGrabInters[2].trackRotation = true;
+            xrGrabInters[3].trackRotation = true;
         }
 
         UpdateGizmoGroupCenter();
@@ -318,15 +338,15 @@ public class TransformGizmo : MonoBehaviour
     {
         if (ModelEditingPanel.Instance.currentGizmoSpace == GizmoSpace.World)
         {
-            if (axis == axes[0]) return Vector3.right;   
-            if (axis == axes[1]) return Vector3.up;     
-            if (axis == axes[2]) return Vector3.forward; 
+            if (axis == axes[1]) return Vector3.right;   
+            if (axis == axes[2]) return Vector3.up;     
+            if (axis == axes[3]) return Vector3.forward; 
         }
         else if (ModelEditingPanel.Instance.currentGizmoSpace == GizmoSpace.Local)
         {
-            if (axis == axes[0]) return axisParent.right;   
-            if (axis == axes[1]) return axisParent.up;      
-            if (axis == axes[2]) return axisParent.forward;
+            if (axis == axes[1]) return axisParent.right;   
+            if (axis == axes[2]) return axisParent.up;      
+            if (axis == axes[3]) return axisParent.forward;
         }
 
         return Vector3.up; 

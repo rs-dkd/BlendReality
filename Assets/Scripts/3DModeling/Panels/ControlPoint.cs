@@ -128,6 +128,7 @@ public class ControlPoint : MonoBehaviour
     public void Deactivate()
     {
         ViewManager.Instance.OnControlPointSizeChanged.RemoveListener(ControlPointSizeChanged);
+        SetMaterialToDeselected();
         this.gameObject.SetActive(false);
     }
 
@@ -140,10 +141,12 @@ public class ControlPoint : MonoBehaviour
 
     public void SetMaterialToSelected()
     {
+        isSelected = true;
         meshRenderer.material = ViewManager.Instance.GetSelectedControlPointMaterial();
     }
     public void SetMaterialToDeselected()
     {
+        isSelected = false;
         meshRenderer.material = ViewManager.Instance.GetUnselectedControlPointMaterial();
     }
 
@@ -152,31 +155,43 @@ public class ControlPoint : MonoBehaviour
     public bool isSelected;
     private void OnGrabStart(UnityEngine.XR.Interaction.Toolkit.SelectEnterEventArgs args)
     {
-        if(ModelEditingPanel.Instance.currentTransformType == TransformType.Select)
+        isSelectOne = false;
+        if (ModelEditingPanel.Instance.currentTransformType == TransformType.Select)
         {
             if (isSelected == false)
             {
-                isSelected = true;
                 ModelEditingPanel.Instance.MultiSelectControlPoint(this);
-                SetMaterialToSelected();
             }
             else
             {
-                isSelected = false;
                 ModelEditingPanel.Instance.DeSelectControlPoint(this);
-                SetMaterialToDeselected();
             }
         }
         else if(ModelEditingPanel.Instance.currentTransformType == TransformType.Free)
         {
+            isSelectOne = true;
+            ModelEditingPanel.Instance.MultiSelectControlPoint(this);
             previousPosition = this.transform.position;
             isMovingVertex = true;
         }
+        else if(ModelEditingPanel.Instance.GetControlPoints().Count == 0)
+        {
+            if (isSelected == false)
+            {
+                ModelEditingPanel.Instance.MultiSelectControlPoint(this);
+            }
+            else
+            {
+                ModelEditingPanel.Instance.DeSelectControlPoint(this);
+            }
+        }
     }
+    public bool isSelectOne;
     private void OnGrabEnd(UnityEngine.XR.Interaction.Toolkit.SelectExitEventArgs args)
     {
-        if (ModelEditingPanel.Instance.currentTransformType == TransformType.Free)
+        if (ModelEditingPanel.Instance.currentTransformType == TransformType.Free || isSelectOne)
         {
+            isSelectOne = false;
             isMovingVertex = false;
         }
     }

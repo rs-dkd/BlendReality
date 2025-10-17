@@ -36,7 +36,7 @@ public class ModelsManager : MonoBehaviour
     }
     public void UnTrackModel(ModelData model)
     {
-        models.Remove(model);
+        if(model != null)models.Remove(model);
         OnModelsChanged.Invoke(models);
     }
     public List<ModelData> GetAllModelsInScene()

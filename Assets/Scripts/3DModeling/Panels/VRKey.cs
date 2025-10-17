@@ -2,52 +2,62 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using TMPro;
 
-
-[RequireComponent(typeof(Button))]
-public class VRKey : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public enum SpecialKey
 {
-    public string key = "A";
+    Key,
+    Backspace,
+    Tab,
+    CapLk,
+    Shift,
+    Enter,
+    Space,
+}
+
+
+public class VRKey : MonoBehaviour
+{
+    public SpecialKey specialKey = SpecialKey.Key;
+    public string lowerKey = "a";
+    public string upperKey = "A";
 
     private VRKeyboard keyboard;
-    private Button button;
+    public Button button;
+    public bool isLower = true;
 
+    public TMP_Text keyText;
 
-    private Color originalColor;
-
-    void Start()
+    public void Setup(VRKeyboard _keyboard)
     {
-        keyboard = GetComponentInParent<VRKeyboard>();
-        button = GetComponent<Button>();
-        originalColor = button.image.color;
+        Debug.Log("f");
+        keyboard = _keyboard;
 
-        button.onClick.AddListener(OnKeyPress);
-
-        Text keyText = GetComponentInChildren<Text>();
-        if (keyText != null)
-        {
-            keyText.text = key;
-        }
+        keyText.text = lowerKey;
+        isLower = true;
     }
 
  
-    private void OnKeyPress()
+    public void OnKeyPress()
     {
         if (keyboard != null)
         {
-            keyboard.KeyPress(key);
+            keyboard.KeyPress(this);
+        }
+    }
+
+    public void Switch()
+    {
+        isLower = !isLower;
+        if (isLower)
+        {
+            keyText.text = lowerKey;
+        }
+        else
+        {
+            keyText.text = upperKey;
         }
     }
 
 
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        button.image.color = Color.cyan; 
-    }
-
- 
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        button.image.color = originalColor;
-    }
 }
