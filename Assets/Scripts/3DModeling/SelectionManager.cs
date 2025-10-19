@@ -69,4 +69,8 @@ public class SelectionManager : MonoBehaviour
             return null;
         }
     }
+    public List<ModelData> GetSelectedModels()
+    {
+        return selectedModels;
+    }
 }
