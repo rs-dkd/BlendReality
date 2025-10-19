@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 public enum ControllerInputType
 {
-    LeftPrimary, RightPrimary, LeftSecondary, RightSecondary
+    LeftPrimary, RightPrimary, LeftSecondary, RightSecondary, Trigger
 }
 public class UIPanel : MonoBehaviour
 {
@@ -55,7 +55,6 @@ public class UIPanel : MonoBehaviour
 
 
 
-    public InputActionReference menuButtonAction;
 
 
     void SetupInput()
@@ -76,6 +75,10 @@ public class UIPanel : MonoBehaviour
         else if (inputType == ControllerInputType.RightSecondary)
         {
             menuAction.AddBinding("<XRController>{RightHand}/secondaryButton");
+        }
+        else if (inputType == ControllerInputType.Trigger)
+        {
+            menuAction.AddBinding("<XRController>{RightHand}/trigger");
         }
         menuAction.Enable();
         menuAction.performed += OnMenuButtonPressed;

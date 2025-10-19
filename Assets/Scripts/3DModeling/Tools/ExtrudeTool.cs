@@ -5,8 +5,36 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.ProBuilder.MeshOperations;
 
-public class ExtrudeTool : MonoBehaviour
+public class ExtrudeTool : OperationTool
 {
+
+
+
+
+    public override bool CanShowTool()
+    {
+        if (ModelEditingPanel.Instance.GetEditMode() == EditMode.Face)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public override bool CanPerformTool()
+    {
+        if (ModelEditingPanel.Instance.GetControlPoints().Count != 0 && ModelEditingPanel.Instance.GetEditMode() == EditMode.Face)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
     ///// <summary>
     ///// Performs inset and extrusion on the selected faces of a model.
     ///// </summary>
@@ -104,4 +132,4 @@ public class ExtrudeTool : MonoBehaviour
 
     //    ModelEditingPanel.Instance.UpdateEditModel();
     //}
-}
+//}

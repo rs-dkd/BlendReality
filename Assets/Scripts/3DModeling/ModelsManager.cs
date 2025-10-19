@@ -9,6 +9,7 @@ public class ModelsChangedEvent : UnityEvent<List<ModelData>> { }
 public class ModelsManager : MonoBehaviour
 {
     public static ModelsManager Instance { get; private set; }
+
     public ModelsChangedEvent OnModelsChanged = new ModelsChangedEvent();
 
     void Awake()

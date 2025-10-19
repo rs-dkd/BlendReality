@@ -44,6 +44,8 @@ public class ToggleGroupUI : MonoBehaviour
         toggleGroup.allowSwitchOff = allowOff;
         foreach (String value in options)
         {
+ 
+
             GameObject toggleInstance = Instantiate(togglePrefab, optionsParent);
             toggleInstance.name = value.ToString(); 
 
@@ -56,6 +58,8 @@ public class ToggleGroupUI : MonoBehaviour
             toggleItem.toggle.onValueChanged.AddListener((isOn) => {
                 OnToggleSelected(toggleItem.toggle);
             });
+
+ 
         }
 
         if(allowOff == false)

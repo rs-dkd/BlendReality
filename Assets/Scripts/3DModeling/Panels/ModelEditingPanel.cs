@@ -65,6 +65,11 @@ public class ModelEditingPanel : MonoBehaviour
     public TransformType currentTransformType = TransformType.Free;
 
 
+    public EditMode GetEditMode()
+    {
+        return currentEditMode;
+    }
+
     public GameObject[] snappingOptions;
     public bool showSnap = false;
     public void SnapToggle()
@@ -565,8 +570,10 @@ public class ModelEditingPanel : MonoBehaviour
 
                 controlPoints[i].AddOffsetToControlPointPosition(offset);
             }
-
-
         }
     }
+
+
+
+
 }

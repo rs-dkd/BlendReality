@@ -260,7 +260,7 @@ public class ModelCreator : MonoBehaviour
     {
         if (currentModel != null)
         {
-            SelectionManager.Instance.RemoveModelFromSelection(currentModel);
+            
             currentModel.DeleteModel();
             currentModel = null;
         }
