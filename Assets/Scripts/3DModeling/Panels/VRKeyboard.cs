@@ -138,6 +138,28 @@ public class VRKeyboard : MonoBehaviour
         inputField.text += input;
     }
 
+    public void BindKeyboard(TMP_InputField fieldToBind, Transform followTarget, bool isNumeric = false)
+    {
+        inputField = fieldToBind;
+        if (lazyFollow != null)
+        {
+            lazyFollow.target = followTarget;
+        }
+        isNumber = isNumeric;
+        GameObject keyboard = EnableKeyboard();
 
+        RectTransform trans = keyboard.GetComponent<RectTransform>();
+        trans.localPosition = Vector3.zero;
+    }
+
+    public void UnbindKeyboard()
+    {
+        inputField = null;
+        if (lazyFollow != null)
+        {
+            lazyFollow.target = null;
+        }
+        DisableKeyboard();
+    }
 
 }
