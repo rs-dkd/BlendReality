@@ -9,6 +9,7 @@ public class ModelsChangedEvent : UnityEvent<List<ModelData>> { }
 public class ModelsManager : MonoBehaviour
 {
     public static ModelsManager Instance { get; private set; }
+
     public ModelsChangedEvent OnModelsChanged = new ModelsChangedEvent();
 
     void Awake()
@@ -36,7 +37,7 @@ public class ModelsManager : MonoBehaviour
     }
     public void UnTrackModel(ModelData model)
     {
-        models.Remove(model);
+        if(model != null)models.Remove(model);
         OnModelsChanged.Invoke(models);
     }
     public List<ModelData> GetAllModelsInScene()

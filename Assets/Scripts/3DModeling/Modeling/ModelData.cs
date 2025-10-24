@@ -10,6 +10,14 @@ using UnityEngine.XR.Interaction.Toolkit;
 using UnityEditorInternal;
 public class ModelData : MonoBehaviour
 {
+    public static int modelIDCounter = 0;
+    public static int GetNewModelID()
+    {
+        modelIDCounter++;
+        return modelIDCounter;
+    }
+
+
     public string modelName;
     public int modelID;
     private Material originalMaterial;
@@ -20,16 +28,27 @@ public class ModelData : MonoBehaviour
     public ProBuilderMesh editingModel;
     public Transform trans;
     private bool isSelected;
-    //public SmoothSurface smoothedMesh;
     public XRGrabInteractable interactable;
-    public XRGeneralGrabTransformer grabTransform;
+    public SnappingGrabTransformer grabTransform;
     public EditMode editMode;
     public TransformType transformType;
-
+    public bool GetIsSelected()
+    {
+        return isSelected;
+    }
+    public void UpdateName(string name)
+    {
+        modelName = name;
+    }
+    public string GetName()
+    {
+        return modelName;
+    }
     private void Start()
     {
         ModelEditingPanel.Instance.OnEditModeChanged.AddListener(OnEditModeChanged);
-        TransformGizmo.Instance.OnTransformTypeChanged.AddListener(OnTransformTypeChanged);
+        ModelEditingPanel.Instance.OnTransformTypeChanged.AddListener(OnTransformTypeChanged);
+
     }
     public void DeleteModel()
     {
@@ -37,6 +56,7 @@ public class ModelData : MonoBehaviour
         ModelEditingPanel.Instance.OnEditModeChanged.RemoveListener(OnEditModeChanged);
         ViewManager.Instance.OnShadingChanged.RemoveListener(ShadingUpdated);
         ModelsManager.Instance.UnTrackModel(this);
+        SelectionManager.Instance.RemoveModelFromSelection(this);
         Destroy(this.gameObject);
     }
     /// <summary>
@@ -45,9 +65,9 @@ public class ModelData : MonoBehaviour
     
     public void OnTransformTypeChanged()
     {
-        transformType = TransformGizmo.Instance.transformType; 
+        transformType = ModelEditingPanel.Instance.currentTransformType; 
 
-        if (interactable == null) return;
+        if (isSelected == false) return;
 
         if (transformType == TransformType.Free)
         {
@@ -105,6 +125,10 @@ public class ModelData : MonoBehaviour
     {
         return meshFilter.sharedMesh;
     }
+    public MeshFilter GetMeshFilter()
+    {
+        return meshFilter;
+    }
     public int GetFacesCount()
     {
         return editingModel.faceCount;
@@ -131,7 +155,8 @@ public class ModelData : MonoBehaviour
     public void SetupModel(ProBuilderMesh _editingModel)
     {
         editingModel = _editingModel;
-       
+        modelName = "NewObject_" + ModelData.GetNewModelID();
+
         trans = this.transform;
         meshRender = this.GetComponent<MeshRenderer>();
         meshCollider = this.AddComponent<MeshCollider>();
@@ -142,8 +167,9 @@ public class ModelData : MonoBehaviour
         rigid.isKinematic = true;
 
         interactable = this.AddComponent<XRGrabInteractable>();
-        grabTransform = this.AddComponent<XRGeneralGrabTransformer>();
+        grabTransform = this.AddComponent<SnappingGrabTransformer>();
         interactable.selectEntered.AddListener(OnGrab);
+
 
 
         //if (smoothedMesh == null)
@@ -173,6 +199,7 @@ public class ModelData : MonoBehaviour
     }
     public void UpdateMeshEdit()
     {
+        editingModel.Refresh();
         editingModel.Refresh();
         //smoothedMesh.UpdateMesh();
     }
@@ -212,6 +239,8 @@ public class ModelData : MonoBehaviour
             }
         }
     }
+
+
 
 
     public void ShadingUpdated()

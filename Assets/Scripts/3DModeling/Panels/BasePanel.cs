@@ -51,7 +51,6 @@ public abstract class BasePanel : MonoBehaviour
         isClosed = false;        
     }
 
-
     IEnumerator AnimateMenuScale(Vector3 fromScale, Vector3 toScale)
     {
         float elapsedTime = 0f;

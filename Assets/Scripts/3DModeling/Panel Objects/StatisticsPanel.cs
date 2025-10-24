@@ -39,6 +39,9 @@ public class StatisticsPanel : MonoBehaviour
 
         SelectionManager.Instance.OnSelectionChanged.AddListener(HandleSelectionChanged);
         ModelsManager.Instance.OnModelsChanged.AddListener(HandleModelsChanged);
+
+        SelectionManager.Instance.ClearSelection();
+        ModelsManager.Instance.UnTrackModel(null);
     }
     public void HandleModelsChanged(List<ModelData> currentModels)
     {

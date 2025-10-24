@@ -60,6 +60,14 @@ public class ViewManager : MonoBehaviour
 
 
 
+
+
+
+
+
+
+
+
     public GameObject gridGO;
     public void ToggleGrid()
     {
@@ -122,7 +130,6 @@ public class ViewManager : MonoBehaviour
 
 
 
-    public TMPro.TMP_Dropdown shadingDropdown;
     public ShadingType currentShadingType;
     public ShadingType GetShadingType()
     {

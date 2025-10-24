@@ -17,7 +17,8 @@ public class ToggleGroupUI : MonoBehaviour
     public Transform optionsParent;
     public GameObject togglePrefab;
     public ToggleGroupChangedEvent OnToggleGroupChanged = new ToggleGroupChangedEvent();
-
+    public bool allowOff = false;
+    public bool createOnAwake = true;
     public void OnToggleSelected(Toggle toggle)
     {
         if (toggle.isOn)
@@ -28,10 +29,23 @@ public class ToggleGroupUI : MonoBehaviour
 
     private void Awake()
     {
-        Toggle activeToggle = null;
+        if (createOnAwake)
+        {
+            Setup();
+        }
+    }
+    public void Setup(string[] _options = null) { 
+        if(_options != null)
+        {
+            options = _options;
+        }
 
+        Toggle activeToggle = null;
+        toggleGroup.allowSwitchOff = allowOff;
         foreach (String value in options)
         {
+ 
+
             GameObject toggleInstance = Instantiate(togglePrefab, optionsParent);
             toggleInstance.name = value.ToString(); 
 
@@ -44,9 +58,16 @@ public class ToggleGroupUI : MonoBehaviour
             toggleItem.toggle.onValueChanged.AddListener((isOn) => {
                 OnToggleSelected(toggleItem.toggle);
             });
+
+ 
         }
 
-        activeToggle.isOn = true;
-        OnToggleSelected(activeToggle);
+        if(allowOff == false)
+        {
+            activeToggle.isOn = true;
+            OnToggleSelected(activeToggle);
+        }
+        
+
     }
 }

@@ -26,6 +26,11 @@ public class SelectionManager : MonoBehaviour
 
 
     public List<ModelData> selectedModels = new List<ModelData>();
+
+    public List<ModelData> GetSelectedModels()
+    {
+        return selectedModels;
+    }
     public void ClearSelection()
     {
         for (int i = 0; i < selectedModels.Count; i++)
@@ -68,5 +73,9 @@ public class SelectionManager : MonoBehaviour
         {
             return null;
         }
+    }
+    public List<ModelData> GetSelectedModels()
+    {
+        return selectedModels;
     }
 }

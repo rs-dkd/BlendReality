@@ -1,4 +1,4 @@
-Shader "Unlit/BlenderGridAdvanced"
+Shader "Custom/BlenderGridAdvanced"
 {
     Properties
     {
@@ -7,7 +7,10 @@ Shader "Unlit/BlenderGridAdvanced"
         _MajorGridColor ("Major Grid Color", Color) = (0.7, 0.7, 0.7, 0.6)
         _GridSize ("Grid Size", Float) = 1.0
         _MajorGridSize ("Major Grid Size", Float) = 10.0
-        _LineWidth ("Line Width", Range(0, 0.1)) = 0.02
+        _LineWidth ("Line Width", Range(0, 1)) = 0.02
+        
+        _FadeStartDistance ("Fade Start Distance", Float) = 20.0
+        _FadeEndDistance ("Fade End Distance", Float) = 30.0
     }
     SubShader
     {
@@ -36,7 +39,8 @@ Shader "Unlit/BlenderGridAdvanced"
             {
                 float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
-                float3 worldPos : TEXCOORD1;
+                float3 localPos : TEXCOORD1; 
+                float3 worldPos : TEXCOORD2; 
                 UNITY_VERTEX_OUTPUT_STEREO 
             };
 
@@ -46,6 +50,9 @@ Shader "Unlit/BlenderGridAdvanced"
             float _GridSize;
             float _MajorGridSize;
             float _LineWidth;
+            
+            float _FadeStartDistance;
+            float _FadeEndDistance;
 
             v2f vert (appdata v)
             {
@@ -55,29 +62,47 @@ Shader "Unlit/BlenderGridAdvanced"
 
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
+                o.localPos = v.vertex.xyz; 
+                
                 o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+
                 return o;
             }
 
             fixed4 frag (v2f i) : SV_Target
             {
+
+                float2 gridCoords = i.worldPos.xz;
+                
                 // Minor grid
-                float2 gridUV = i.worldPos.xz * _GridSize;
+                float2 gridUV = gridCoords / _GridSize;
                 float2 grid = abs(frac(gridUV - 0.5) - 0.5) / fwidth(gridUV);
                 float minorLine = min(grid.x, grid.y);
-                float minorGrid = 1.0 - min(minorLine, 1.0);
+                float minorGrid = 1.0 - saturate(minorLine * (1/_LineWidth));
                 
                 // Major grid
-                float2 majorGridUV = i.worldPos.xz * _MajorGridSize;
+                float2 majorGridUV = gridCoords / _MajorGridSize;
                 float2 majorGrid = abs(frac(majorGridUV - 0.5) - 0.5) / fwidth(majorGridUV);
                 float majorLine = min(majorGrid.x, majorGrid.y);
-                float majorGridLine = 1.0 - min(majorLine, 1.0);
+                float majorGridLine = 1.0 - saturate(majorLine * (1/_LineWidth));
                 
                 // Combine grids
                 fixed4 col = _BaseColor;
-                col = lerp(col, _GridColor, minorGrid);
-                col = lerp(col, _MajorGridColor, majorGridLine);
+                col = lerp(col, _GridColor, minorGrid * _GridColor.a);
+                col = lerp(col, _MajorGridColor, majorGridLine * _MajorGridColor.a);
+                col.a = _BaseColor.a;
+                col.a = max(col.a, minorGrid * _GridColor.a);
+                col.a = max(col.a, majorGridLine * _MajorGridColor.a);
                 
+
+                float dist = distance(i.worldPos, _WorldSpaceCameraPos.xyz);
+                
+                float fadeRange = _FadeEndDistance - _FadeStartDistance;
+                float fadeFactor = 1.0 - saturate((dist - _FadeStartDistance) / max(fadeRange, 0.0001));
+
+                // Apply the fade to the final alpha
+                col.a *= fadeFactor;
+
                 return col;
             }
             ENDCG
