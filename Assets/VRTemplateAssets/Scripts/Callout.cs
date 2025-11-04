@@ -80,7 +80,7 @@ namespace Unity.VRTemplate
             yield return null;
         }
 
-        void TurnOnStuff()
+        public void TurnOnStuff()
         {
             if (m_LazyTooltip != null)
                 m_LazyTooltip.gameObject.SetActive(true);
@@ -88,7 +88,7 @@ namespace Unity.VRTemplate
                 m_Curve.SetActive(true);
         }
 
-        void TurnOffStuff()
+        public void TurnOffStuff()
         {
             if (m_LazyTooltip != null)
                 m_LazyTooltip.gameObject.SetActive(false);
