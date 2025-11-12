@@ -152,6 +152,7 @@ public class SliderUI : KeyboardInputField
         slider.wholeNumbers = isWholeNumbers;
         OnEditToggle();
         UpdateVisualValues();
+        slider.onValueChanged.AddListener(OnSliderValueChangedInternal);
     }
     /// <summary>
     /// Destroy Function, unsubscribes from unit system change events to prevent memory leaks.
@@ -219,5 +220,10 @@ public class SliderUI : KeyboardInputField
     {
         base.ActivateEdit();
         UpdateVisualValues();
+    }
+
+    private void OnSliderValueChangedInternal(float value)
+    {
+        UpdateVisualValues(); // This updates the text display
     }
 }

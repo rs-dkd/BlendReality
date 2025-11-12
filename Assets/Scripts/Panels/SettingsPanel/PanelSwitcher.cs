@@ -24,6 +24,14 @@ public class PanelSwitcher : MonoBehaviour
         //Setups the toggle group which creates the tabs
         toggleGroupUI.Setup(options);
 
+        // Initialize - show first panel, hide the rest
+        if (optionPanels.Length > 0)
+        {
+            for (int i = 0; i < optionPanels.Length; i++)
+            {
+                optionPanels[i].SetActive(i == 0);
+            }
+        }
     }
     /// <summary>
     /// Based on the name change the panel
