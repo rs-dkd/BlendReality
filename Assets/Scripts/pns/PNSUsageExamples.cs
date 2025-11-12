@@ -3,6 +3,7 @@ using UnityEngine;
 using PolyhedralNetSplines;
 
 /// <summary>
+/// OUTDATED!
 /// Example usage of PNS integration in Unity
 /// Attach to a GameObject to test PNS functionality
 /// </summary>

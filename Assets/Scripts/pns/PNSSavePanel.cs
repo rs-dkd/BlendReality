@@ -2,7 +2,7 @@ using UnityEngine;
 using System.IO;
 
 /// <summary>
-/// Hook this up to the Settings panel (Save section) to export
+/// Export functionality within Settings
 /// the current model's PnS representation as BV / IGES / STEP.
 /// </summary>
 public class PNSSavePanel : MonoBehaviour

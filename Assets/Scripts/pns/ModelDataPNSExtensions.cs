@@ -3,7 +3,6 @@ using PolyhedralNetSplines;
 
 /// <summary>
 /// Extension to ModelData that adds PNS-specific functionality
-/// Add this as a partial class or integrate into ModelData.cs
 /// </summary>
 public static class ModelDataPNSExtensions
 {

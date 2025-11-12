@@ -281,7 +281,7 @@ public class PNSModelIntegration : MonoBehaviour
             LogWarn($"No cached PnSpline for model {model.modelName} (ID: {model.modelID}). Creating new one.");
             GetOrCreatePnSpline(model);
 
-            // If still not in cache (e.g., caching disabled), return empty
+            // If still not in cache (if caching disabled), return empty
             if (!pnSplineCache.ContainsKey(model.modelID))
             {
                 return Array.Empty<uint>();
@@ -614,7 +614,7 @@ public class PNSModelIntegration : MonoBehaviour
     }
 
     /// <summary>
-    /// Get Bézier control points from a specific patch
+    /// Get Bezier control points from a specific patch
     /// Useful for visualization or further processing
     /// </summary>
     public List<Vector3> GetPatchControlPoints(PnSPatch patch)
@@ -648,8 +648,6 @@ public class PNSModelIntegration : MonoBehaviour
 
     /// <summary>
     /// Evaluate the PnSpline for this model and assign the smooth PnS surface to the display MeshFilter.
-    /// IMPORTANT: We do NOT overwrite the ProBuilder edit mesh or call UpdateMeshCreation here,
-    /// to avoid recursively rebuilding PnSpline from the dense evaluated surface.
     /// </summary>
     public void ApplyPnSSurfaceToModel(ModelData model, int? overrideSamplesPerPatch = null)
     {
@@ -706,7 +704,7 @@ public class PNSModelIntegration : MonoBehaviour
                 }
             }
 
-            // Build a Unity Mesh (no ProBuilder)
+            // Build a Unity Mesh
             Mesh outMesh = new Mesh();
             outMesh.indexFormat = positions.Count > 65535
                 ? UnityEngine.Rendering.IndexFormat.UInt32
@@ -718,7 +716,6 @@ public class PNSModelIntegration : MonoBehaviour
                 outMesh.SetTriangles(triangles, 0, true);
                 outMesh.RecalculateNormals();
                 outMesh.RecalculateBounds();
-                // If tangents/UVs are needed for your pipeline, compute/add them here.
             }
 
             using (new ScopeTimer("  Assign to MeshFilter/Collider", this, LogVerbosity.Info))
@@ -922,7 +919,7 @@ public class PNSModelIntegration : MonoBehaviour
 
     /// <summary>
     /// Update a specific control point in a patch.
-    /// This directly modifies the PnSpline's Bézier control net.
+    /// This directly modifies the PnSpline's Bezier control net.
     /// </summary>
     public bool UpdatePatchControlPoint(ModelData model, uint patchIndex, uint uIndex, uint vIndex, Vector3 worldPosition, bool reEvaluate = false)
     {

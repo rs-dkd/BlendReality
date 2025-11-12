@@ -276,7 +276,7 @@ public class PNSEditingPanel : MonoBehaviour
             }
         }
 
-        // Store all line renderers under patch 0 (we're not using per-patch storage anymore)
+        // Store all line renderers under patch 0
         patchLineRenderers[0] = lineRenderers;
 
         Debug.Log($"Created {lineRenderers.Count} control net lines");
@@ -309,7 +309,7 @@ public class PNSEditingPanel : MonoBehaviour
         if (!showControlNet || !patchLineRenderers.ContainsKey(0)) return;
         if (currentModel == null) return;
 
-        // Simply recreate the control net (it's fast enough for mesh edges)
+        // Simply recreate the control net
         ClearControlNet();
         CreateControlNetForMesh();
     }
@@ -440,10 +440,6 @@ public class PNSEditingPanel : MonoBehaviour
             {
                 UpdateControlNetForMesh();
             }
-
-            // Note: We do NOT call RefreshAllControlPoints() here because the control points
-            // should remain at their dragged positions (the control mesh vertices).
-            // ApplyPnSSurfaceToModel creates an interpolated surface mesh, not the control mesh.
         }
 
         cp.Deselect();
@@ -473,7 +469,7 @@ public class PNSEditingPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Refresh all control point positions for a specific patch (deprecated - kept for compatibility)
+    /// Refresh all control point positions for a specific patch - Not used I'm pretty sure
     /// </summary>
     private void RefreshControlPointsForPatch(uint patchIdx)
     {

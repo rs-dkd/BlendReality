@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using PolyhedralNetSplines;
 
 /// <summary>
-/// Automatic PNS Tester - No setup required!
-/// Just add this component to any GameObject and press Play
+/// Automatic PNS Tester
 /// It will automatically find and test all models in the scene
 /// </summary>
 public class AutomaticPNSTester : MonoBehaviour

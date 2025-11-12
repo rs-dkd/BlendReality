@@ -41,7 +41,6 @@ public class PNSInteractionController : MonoBehaviour
 
             if (pushExplicitPositions)
             {
-                // If your ModelData.GetVerts() returns local positions, convert to world here.
                 Vector3 pos = model.GetVerts()[idx];
                 _movedWorldPositions.Add(pos);
             }
