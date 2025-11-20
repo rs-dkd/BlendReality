@@ -1017,6 +1017,26 @@ public class PNSModelIntegration : MonoBehaviour
 
     #endregion
 
+    #region Cache Management
+      
+    /// <summary>
+    /// Manually cache a PnSpline for a model
+    /// Used by quad topology system to cache pre-created splines
+    /// </summary>
+    public void CachePnSpline(int modelID, PnSpline spline)
+    {
+        if (config.cacheSplines)
+        {
+            if (pnSplineCache.ContainsKey(modelID))
+            {
+                pnSplineCache[modelID]?.Dispose();
+            }
+            pnSplineCache[modelID] = spline;
+            LogInfo($"Cached PnSpline for model ID {modelID}");
+        }
+    }
+    #endregion
+
     #region Cleanup
 
     private void OnDestroy()

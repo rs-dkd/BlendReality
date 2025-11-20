@@ -30153,6 +30153,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6dd520ad7bc353d4da922f1ef1f24ca5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  preserveQuadTopology: 1
 --- !u!114 &1404094027
 MonoBehaviour:
   m_ObjectHideFlags: 0
