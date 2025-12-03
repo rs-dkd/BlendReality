@@ -61,7 +61,7 @@ public class ModelEditingPanel : MonoBehaviour
     [SerializeField] private ToggleGroupUI transformTypeToggleGroup;
 
     private TransformType currentTransformType = TransformType.Free;
-    private String[] transformTypeOptions = new String[] { "Select", "Free", "Move", "Rotate", "Scale" };
+    private String[] transformTypeOptions = new String[] { "Select", "Free", "Move" };
 
     //Gizmo Space
     [Tooltip("Gizmo Space (local, world) Toggle Group")]

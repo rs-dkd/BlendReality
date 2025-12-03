@@ -18617,10 +18617,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Title
       objectReference: {fileID: 0}
-    - target: {fileID: 3923810328912169420, guid: 1e0ceb3ada38d38449fd62503029d51e, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -18702,10 +18698,6 @@ PrefabInstance:
     - target: {fileID: 5157829149945318842, guid: 3d8f94daf72e69d4eab59bdacf7d83b6, type: 3}
       propertyPath: m_Name
       value: GizmoSpaceToggleGroup (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 5157829149945318842, guid: 3d8f94daf72e69d4eab59bdacf7d83b6, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6142727539765944023, guid: 3d8f94daf72e69d4eab59bdacf7d83b6, type: 3}
       propertyPath: m_Pivot.x
@@ -30142,7 +30134,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6dd520ad7bc353d4da922f1ef1f24ca5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  preserveQuadTopology: 1
 --- !u!114 &1404094027
 MonoBehaviour:
   m_ObjectHideFlags: 0
