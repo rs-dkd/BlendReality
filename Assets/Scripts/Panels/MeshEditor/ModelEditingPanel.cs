@@ -8,7 +8,7 @@ using Toggle = UnityEngine.UI.Toggle;
 
 public enum EditMode
 {
-    Object,Vertex,Edge,Face
+    Object, Vertex, Edge, Face
 }
 public class ScaleSnapChangedEvent : UnityEvent<float> { }
 public class RotateSnapChangedEvent : UnityEvent<float> { }
@@ -95,7 +95,7 @@ public class ModelEditingPanel : MonoBehaviour
 
     private String[] moveSnapOptions = new String[] { "None", "1cm", "10cm", "1m" };
     private float[] moveSnapValues = new float[] { 0, 0.01f, 0.1f, 1 };
-    private String[] rotateSnapOptions = new String[] { "None", "5°", "15°", "45°" };
+    private String[] rotateSnapOptions = new String[] { "None", "5 ", "15 ", "45 " };
     private float[] rotateSnapValues = new float[] { 0, 5, 15, 45 };
     private String[] scaleSnapOptions = new String[] { "None", "10%", "50%", "100%" };
     private float[] scaleSnapValues = new float[] { 0, 0.1f, 0.5f, 1 };
@@ -216,7 +216,7 @@ public class ModelEditingPanel : MonoBehaviour
             }
         }
 
-        if(showSnap == false)
+        if (showSnap == false)
         {
             UpdateMoveSnap(0);
             UpdateRotateSnap(0);
@@ -238,7 +238,7 @@ public class ModelEditingPanel : MonoBehaviour
     /// </summary>
     public void OnMoveSnapToggleGroupChanged(Toggle toggle)
     {
-        for (int i = 0;i < moveSnapOptions.Length;i++)
+        for (int i = 0; i < moveSnapOptions.Length; i++)
         {
             if (moveSnapOptions[i] == toggle.name)
             {
@@ -591,12 +591,12 @@ public class ModelEditingPanel : MonoBehaviour
     /// </summary>
     public void MoveSelectedControlPointsByOffset(Vector3 offset, BaseControlPoint grabbedAndMovedControlPoint = null)
     {
-        if(currentEditMode == EditMode.Vertex)
+        if (currentEditMode == EditMode.Vertex)
         {
             for (int i = 0; i < selectedControlPoints.Count; i++)
             {
                 SelectionManager.Instance.GetFirstSelected().AddOffsetToVerts(offset, ((VertexControlPoint)selectedControlPoints[i]).GetVerts().ToArray());
-                if(grabbedAndMovedControlPoint != selectedControlPoints[i]) selectedControlPoints[i].UpdatePositionAndNormalToMatchElements();
+                if (grabbedAndMovedControlPoint != selectedControlPoints[i]) selectedControlPoints[i].UpdatePositionAndNormalToMatchElements();
                 else Debug.Log("Skipping update for grabbed control point");
             }
         }
@@ -642,12 +642,35 @@ public class ModelEditingPanel : MonoBehaviour
 
 
 
+    [Header("PNS Integration")]
+    [Tooltip("Samples per patch edge when applying PnS from Mesh Editor Panel.")]
+    [SerializeField] private int pnsSamplesPerPatch = 8;
 
+    /// <summary>
+    /// Called by Mesh Editor Panel button: apply PnS smoothing to the currently selected model.
+    /// </summary>
+    public void OnApplyPnSButtonClicked()
+    {
+        if (SelectionManager.Instance == null)
+        {
+            Debug.LogWarning("PNS: No SelectionManager instance.");
+            return;
+        }
 
+        ModelData current = SelectionManager.Instance.GetFirstSelected();
+        if (current == null)
+        {
+            Debug.LogWarning("PNS: No model selected to apply PnS.");
+            return;
+        }
 
+        if (PNSModelIntegration.Instance == null)
+        {
+            Debug.LogWarning("PNS: PNSModelIntegration.Instance is null.");
+            return;
+        }
 
-
-
-
+        PNSModelIntegration.Instance.ApplyPnSSurfaceToModel(current, pnsSamplesPerPatch);
+    }
 
 }

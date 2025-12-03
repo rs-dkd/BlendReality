@@ -16,6 +16,7 @@ public enum ModelType
     PlaneWavy,
     PlaneDome
 }
+
 /// <summary>
 /// Handles creating objects
 /// Also manages the panels creation settings
@@ -34,8 +35,8 @@ public class ModelCreator : MonoBehaviour
         {
             Destroy(gameObject);
         }
-
     }
+
     [Tooltip("Uniform Size Toggle")]
     [SerializeField] private Toggle uniformSizeToggle;
     [Tooltip("Uniform Size Slider")]
@@ -61,27 +62,18 @@ public class ModelCreator : MonoBehaviour
     [Tooltip("Mesh Type Toggle Group")]
     [SerializeField] private ToggleGroupUI modelTypeToggleGroupUI;
 
-
-
     [Tooltip("Mesh Creation point - (has a lazy follow)")]
     [SerializeField] private Transform meshCreationPoint;
-
 
     private ModelData currentModel;
     private ModelType currentShapeType;
     private bool hasUniformSize;
-
-
-
-
-
 
     /// <summary>
     /// Setup listeners and events, and the UI
     /// </summary>
     void Start()
     {
-
         modelTypeToggleGroupUI.OnToggleGroupChanged.AddListener(ModelTypeSelected);
 
         sizeSlider.OnSliderValueChangedEvent.AddListener(SizeSliderUpdated);
@@ -99,11 +91,10 @@ public class ModelCreator : MonoBehaviour
 
         UniformSizeToggleChanged();
     }
+
     /// <summary>
     /// If changed to the edit panel - finalize the model
     /// </summary>
-    /// 
-    //TODO: Maybe monitor sleection change too show you can finalize the model and allow the user to easily create a new one
     public void PanelChanged(UIPanel panel)
     {
         if (panel.name == "EditPanel")
@@ -143,9 +134,9 @@ public class ModelCreator : MonoBehaviour
 
                 CreateOrUpdateModel();
             }
- 
         }
     }
+
     /// <summary>
     /// Reset all the sliders on model type changed
     /// </summary>
@@ -161,6 +152,7 @@ public class ModelCreator : MonoBehaviour
         ySubDivisionSlider.SetValue(1);
         zSubDivisionSlider.SetValue(1);
     }
+
     /// <summary>
     /// The uniform size toggle updated - update the sliders and UI
     /// </summary>
@@ -172,12 +164,13 @@ public class ModelCreator : MonoBehaviour
         UpdateSizeSlidersMinMax();
         UpdateSubDSliders();
     }
+
     /// <summary>
     /// The uniform size toggle updated - update the sliders and UI
     /// </summary>
     private void UniformChangedUpdateSliderValues()
     {
-        if(hasUniformSize != uniformSizeToggle.isOn)
+        if (hasUniformSize != uniformSizeToggle.isOn)
         {
             hasUniformSize = uniformSizeToggle.isOn;
 
@@ -194,16 +187,16 @@ public class ModelCreator : MonoBehaviour
             }
         }
     }
+
     /// <summary>
     /// Update the size sliders
     /// </summary>
     private void UpdateSizeSlidersUI()
     {
-        if (currentShapeType == ModelType.PlaneFlat) // plane
+        if (currentShapeType == ModelType.PlaneFlat)
         {
             if (hasUniformSize)
             {
-                
                 sizeSlider.Show();
                 xSizeSlider.Hide();
                 ySizeSlider.Hide();
@@ -221,7 +214,7 @@ public class ModelCreator : MonoBehaviour
         }
         else
         {
-            if (currentShapeType == ModelType.Pipe)//pipe,
+            if (currentShapeType == ModelType.Pipe)
             {
                 if (hasUniformSize)
                 {
@@ -259,9 +252,9 @@ public class ModelCreator : MonoBehaviour
                     thicknessSizeSlider.Hide();
                 }
             }
-
         }
     }
+
     /// <summary>
     /// Update the size sliders min max
     /// </summary>
@@ -273,6 +266,7 @@ public class ModelCreator : MonoBehaviour
         zSizeSlider.SetMinMax(0.1f, 2);
         thicknessSizeSlider.SetMinMax(0.1f, 2);
     }
+
     /// <summary>
     /// Update the sub D sliders
     /// </summary>
@@ -280,68 +274,64 @@ public class ModelCreator : MonoBehaviour
     {
         if (currentShapeType == ModelType.Cube)
         {
-            xSubDivisionSlider.SetMinMax(1,10);
-            ySubDivisionSlider.SetMinMax(1,10);
-            zSubDivisionSlider.SetMinMax(1,10);
+            xSubDivisionSlider.SetMinMax(1, 10);
+            ySubDivisionSlider.SetMinMax(1, 10);
+            zSubDivisionSlider.SetMinMax(1, 10);
         }
-        else if (currentShapeType == ModelType.Sphere)//sphere
+        else if (currentShapeType == ModelType.Sphere)
         {
-            subDivisionSlider.SetMinMax(0,5);
+            subDivisionSlider.SetMinMax(0, 3);
         }
-        else if (currentShapeType == ModelType.Cone || currentShapeType == ModelType.Pipe || currentShapeType == ModelType.Cylinder)//cone, pipe, Cylinder
+        else if (currentShapeType == ModelType.Cone || currentShapeType == ModelType.Pipe || currentShapeType == ModelType.Cylinder)
         {
-            subDivisionSlider.SetMinMax(3,10);
-            ySubDivisionSlider.SetMinMax(0,10);
+            subDivisionSlider.SetMinMax(3, 10);
+            ySubDivisionSlider.SetMinMax(0, 10);
         }
-        else if (currentShapeType == ModelType.PlaneFlat || currentShapeType == ModelType.PlaneDome || currentShapeType == ModelType.PlaneWavy)//planes
+        else if (currentShapeType == ModelType.PlaneFlat || currentShapeType == ModelType.PlaneDome || currentShapeType == ModelType.PlaneWavy)
         {
-            xSubDivisionSlider.SetMinMax(0,10);
-            zSubDivisionSlider.SetMinMax(0,10);
+            xSubDivisionSlider.SetMinMax(0, 10);
+            zSubDivisionSlider.SetMinMax(0, 10);
         }
     }
+
     private void UpdateSubDSliders()
     {
-        if (currentShapeType == ModelType.Cube)//Cube
+        if (currentShapeType == ModelType.Cube)
         {
             subDivisionSlider.Hide();
             xSubDivisionSlider.Show();
             ySubDivisionSlider.Show();
             zSubDivisionSlider.Show();
         }
-        else if (currentShapeType == ModelType.Sphere)//Sphere
+        else if (currentShapeType == ModelType.Sphere)
         {
             subDivisionSlider.Show();
             xSubDivisionSlider.Hide();
             ySubDivisionSlider.Hide();
             zSubDivisionSlider.Hide();
         }
-        else if (currentShapeType == ModelType.Pipe)//pipe,
+        else if (currentShapeType == ModelType.Pipe)
         {
-
             subDivisionSlider.Show();
             xSubDivisionSlider.Hide();
             ySubDivisionSlider.Show();
             zSubDivisionSlider.Hide();
         }
-        else if (currentShapeType == ModelType.Cylinder)// Cylinder
+        else if (currentShapeType == ModelType.Cylinder)
         {
-
             subDivisionSlider.Show();
             xSubDivisionSlider.Hide();
             ySubDivisionSlider.Show();
             zSubDivisionSlider.Hide();
-
         }
-        else if (currentShapeType == ModelType.Cone)//cone,  
+        else if (currentShapeType == ModelType.Cone)
         {
-
             subDivisionSlider.Show();
             xSubDivisionSlider.Hide();
             ySubDivisionSlider.Hide();
             zSubDivisionSlider.Hide();
-
         }
-        else if (currentShapeType == ModelType.PlaneFlat || currentShapeType == ModelType.PlaneDome || currentShapeType == ModelType.PlaneWavy)//planes
+        else if (currentShapeType == ModelType.PlaneFlat || currentShapeType == ModelType.PlaneDome || currentShapeType == ModelType.PlaneWavy)
         {
             subDivisionSlider.Hide();
             xSubDivisionSlider.Show();
@@ -349,22 +339,20 @@ public class ModelCreator : MonoBehaviour
             zSubDivisionSlider.Show();
         }
     }
+
     /// <summary>
     /// Create or update a model called when the model type is changed
     /// </summary>
     private void CreateOrUpdateModel()
     {
-        //Delete the last model and reset
         if (currentModel != null)
         {
             currentModel.DeleteModel();
             currentModel = null;
         }
-        ProBuilderMesh mesh = null;
 
-        //Create model
-        mesh = CreateModelByType(currentShapeType);
-        //Setup model
+        ProBuilderMesh mesh = CreateModelByType(currentShapeType);
+
         GameObject myObject = new GameObject();
         currentModel = myObject.AddComponent<ModelData>();
         currentModel.SetupModel(mesh, meshCreationPoint.position);
@@ -372,53 +360,104 @@ public class ModelCreator : MonoBehaviour
         SizeSliderUpdated(1);
         SelectionManager.Instance.SelectModel(currentModel);
     }
+
     /// <summary>
-    /// Create probuilder mesh by type
+    /// Create probuilder mesh by type - NOW WITH WELDED VERTICES
     /// </summary>
     private ProBuilderMesh CreateModelByType(ModelType type)
     {
         ProBuilderMesh mesh = null;
+
         if (type == ModelType.Cube)
         {
-            mesh = CreateSubdividedCube(Mathf.RoundToInt(xSubDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(zSubDivisionSlider.GetValueAsFloat()));
+            mesh = CreateSubdividedCube(
+                Mathf.RoundToInt(xSubDivisionSlider.GetValueAsFloat()),
+                Mathf.RoundToInt(ySubDivisionSlider.GetValueAsFloat()),
+                Mathf.RoundToInt(zSubDivisionSlider.GetValueAsFloat())
+            );
         }
-        else if (type == ModelType.Sphere) mesh = ShapeGenerator.GenerateIcosahedron(PivotLocation.Center, 1, Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()));
-        else if (type == ModelType.PlaneFlat) mesh = ShapeGenerator.GeneratePlane(PivotLocation.Center, 1, 1, Mathf.RoundToInt(xSubDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(zSubDivisionSlider.GetValueAsFloat()), Axis.Up);
-        else if (type == ModelType.Cone) mesh = ShapeGenerator.GenerateCone(PivotLocation.Center, xSizeSlider.GetValueAsFloat(), ySizeSlider.GetValueAsFloat(), Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()));
+        else if (type == ModelType.Sphere)
+        {
+            mesh = GenerateWeldedSphere(
+                0.5f,
+                Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat())
+            );
+        }
+        else if (type == ModelType.PlaneFlat)
+        {
+            mesh = GenerateWeldedPlane(
+                1f, 1f,
+                Mathf.RoundToInt(xSubDivisionSlider.GetValueAsFloat()),
+                Mathf.RoundToInt(zSubDivisionSlider.GetValueAsFloat())
+            );
+        }
+        else if (type == ModelType.Cone)
+        {
+            mesh = GenerateWeldedCone(
+                1f, 1f,
+                Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat())
+            );
+        }
         else if (type == ModelType.Pipe)
         {
-            if(hasUniformSize)
+            if (hasUniformSize)
             {
-                mesh = ShapeGenerator.GeneratePipe(PivotLocation.Center, sizeSlider.GetValueAsFloat(), sizeSlider.GetValueAsFloat(), sizeSlider.GetValueAsFloat() / 2,
-                Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivisionSlider.GetValueAsFloat()));
+                mesh = GenerateWeldedPipe(
+                    sizeSlider.GetValueAsFloat(),
+                    sizeSlider.GetValueAsFloat(),
+                    sizeSlider.GetValueAsFloat() / 2,
+                    Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()),
+                    Mathf.RoundToInt(ySubDivisionSlider.GetValueAsFloat())
+                );
             }
             else
             {
                 float thickness = thicknessSizeSlider.GetValueAsFloat();
-                if(thickness > (xSizeSlider.GetValueAsFloat()) - 0.01f)
+                if (thickness > (xSizeSlider.GetValueAsFloat()) - 0.01f)
                 {
                     thickness = (xSizeSlider.GetValueAsFloat()) - 0.01f;
                 }
-                mesh = ShapeGenerator.GeneratePipe(PivotLocation.Center, xSizeSlider.GetValueAsFloat(), ySizeSlider.GetValueAsFloat(), thickness,
-Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivisionSlider.GetValueAsFloat()));
+                mesh = GenerateWeldedPipe(
+                    xSizeSlider.GetValueAsFloat(),
+                    ySizeSlider.GetValueAsFloat(),
+                    thickness,
+                    Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()),
+                    Mathf.RoundToInt(ySubDivisionSlider.GetValueAsFloat())
+                );
             }
         }
-
-
-        else if (type == ModelType.Cylinder) mesh = ShapeGenerator.GenerateCylinder(PivotLocation.Center, Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), xSizeSlider.GetValueAsFloat(), ySizeSlider.GetValueAsFloat(), Mathf.RoundToInt(ySubDivisionSlider.GetValueAsFloat()));
+        else if (type == ModelType.Cylinder)
+        {
+            mesh = GenerateWeldedCylinder(
+                1f, 1f,
+                Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()),
+                Mathf.RoundToInt(ySubDivisionSlider.GetValueAsFloat())
+            );
+        }
         else if (type == ModelType.PlaneDome)
         {
-            mesh = GenerateDomePlane(1, 1, Mathf.RoundToInt(xSubDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(zSubDivisionSlider.GetValueAsFloat()), 1);
+            mesh = GenerateWeldedDomePlane(
+                1f, 1f,
+                Mathf.RoundToInt(xSubDivisionSlider.GetValueAsFloat()),
+                Mathf.RoundToInt(zSubDivisionSlider.GetValueAsFloat()),
+                1f
+            );
         }
         else if (type == ModelType.PlaneWavy)
         {
-            mesh = GenerateWavyPlane(1, 1, Mathf.RoundToInt(xSubDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(zSubDivisionSlider.GetValueAsFloat()), 1);
+            mesh = GenerateWeldedWavyPlane(
+                1f, 1f,
+                Mathf.RoundToInt(xSubDivisionSlider.GetValueAsFloat()),
+                Mathf.RoundToInt(zSubDivisionSlider.GetValueAsFloat()),
+                1f
+            );
         }
 
         return mesh;
     }
+
     /// <summary>
-    /// Create a cube
+    /// Create a cube with properly welded vertices
     /// </summary>
     private static ProBuilderMesh CreateSubdividedCube(int xSub, int ySub, int zSub)
     {
@@ -457,8 +496,7 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
             faces.Add(new Face(new int[] { v0, v2, v3 }) { smoothingGroup = smoothingGroup });
         }
 
-
-        //Front (+Z)
+        // Front (+Z)
         for (int y = 0; y <= ySub; y++) { for (int x = 0; x <= xSub; x++) { GetVertex(x * xStep, y * yStep, 1f); } }
         for (int y = 0; y < ySub; y++)
         {
@@ -468,7 +506,7 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
                 int v1 = vertDict[$"{(x + 1) * xStep}_{y * yStep}_1"];
                 int v2 = vertDict[$"{(x + 1) * xStep}_{(y + 1) * yStep}_1"];
                 int v3 = vertDict[$"{x * xStep}_{(y + 1) * yStep}_1"];
-                AddQuad(v0, v1, v2, v3,1);
+                AddQuad(v0, v1, v2, v3, 1);
             }
         }
 
@@ -482,11 +520,11 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
                 int v1 = vertDict[$"{x * xStep}_{y * yStep}_0"];
                 int v2 = vertDict[$"{x * xStep}_{(y + 1) * yStep}_0"];
                 int v3 = vertDict[$"{(x + 1) * xStep}_{(y + 1) * yStep}_0"];
-                AddQuad(v0, v1, v2, v3,2);
+                AddQuad(v0, v1, v2, v3, 2);
             }
         }
 
-        //Right (+X)
+        // Right (+X)
         for (int y = 0; y <= ySub; y++) { for (int z = 0; z <= zSub; z++) { GetVertex(1f, y * yStep, z * zStep); } }
         for (int y = 0; y < ySub; y++)
         {
@@ -496,7 +534,7 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
                 int v1 = vertDict[$"1_{y * yStep}_{(z + 1) * zStep}"];
                 int v2 = vertDict[$"1_{(y + 1) * yStep}_{(z + 1) * zStep}"];
                 int v3 = vertDict[$"1_{(y + 1) * yStep}_{z * zStep}"];
-                AddQuad(v0, v3, v2, v1,3);
+                AddQuad(v0, v3, v2, v1, 3);
             }
         }
 
@@ -510,11 +548,11 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
                 int v1 = vertDict[$"0_{y * yStep}_{z * zStep}"];
                 int v2 = vertDict[$"0_{(y + 1) * yStep}_{z * zStep}"];
                 int v3 = vertDict[$"0_{(y + 1) * yStep}_{(z + 1) * zStep}"];
-                AddQuad(v0, v3, v2, v1,4);
+                AddQuad(v0, v3, v2, v1, 4);
             }
         }
 
-        //Top (+Y)
+        // Top (+Y)
         for (int x = 0; x <= xSub; x++) { for (int z = 0; z <= zSub; z++) { GetVertex(x * xStep, 1f, z * zStep); } }
         for (int x = 0; x < xSub; x++)
         {
@@ -524,11 +562,11 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
                 int v1 = vertDict[$"{(x + 1) * xStep}_1_{z * zStep}"];
                 int v2 = vertDict[$"{(x + 1) * xStep}_1_{(z + 1) * zStep}"];
                 int v3 = vertDict[$"{x * xStep}_1_{(z + 1) * zStep}"];
-                AddQuad(v0, v3, v2, v1,5);
+                AddQuad(v0, v3, v2, v1, 5);
             }
         }
 
-        //Bottom (-Y)
+        // Bottom (-Y)
         for (int x = 0; x <= xSub; x++) { for (int z = 0; z <= zSub; z++) { GetVertex(x * xStep, 0f, z * zStep); } }
         for (int x = 0; x < xSub; x++)
         {
@@ -538,15 +576,12 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
                 int v1 = vertDict[$"{x * xStep}_0_{z * zStep}"];
                 int v2 = vertDict[$"{x * xStep}_0_{(z + 1) * zStep}"];
                 int v3 = vertDict[$"{(x + 1) * xStep}_0_{(z + 1) * zStep}"];
-                AddQuad(v0, v3, v2, v1,6);
+                AddQuad(v0, v3, v2, v1, 6);
             }
         }
 
         var positions = vertices.Select(v => v.position).ToArray();
-
         mesh.RebuildWithPositionsAndFaces(positions, faces);
-
-
         Smoothing.ApplySmoothingGroups(mesh, faces, 180f);
         Normals.CalculateTangents(mesh);
         mesh.ToMesh();
@@ -554,41 +589,406 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
 
         return mesh;
     }
+
     /// <summary>
-    /// Create a wavy plane
+    /// Generate a properly welded icosphere
     /// </summary>
-    private ProBuilderMesh GenerateWavyPlane(float width, float depth, int widthSubdivisions, int depthSubdivisions, float waveHeight)
+    private ProBuilderMesh GenerateWeldedSphere(float radius, int subdivisions)
     {
-        widthSubdivisions = Mathf.Max(1, widthSubdivisions);
-        depthSubdivisions = Mathf.Max(1, depthSubdivisions);
+        subdivisions = Mathf.Clamp(subdivisions, 0, 3);
 
-        ProBuilderMesh planeMesh = ShapeGenerator.GeneratePlane(PivotLocation.Center, width, depth, widthSubdivisions, depthSubdivisions, Axis.Up);
+        GameObject go = new GameObject("WeldedIcosphere");
+        ProBuilderMesh mesh = go.AddComponent<ProBuilderMesh>();
 
-        var vertices = planeMesh.positions.ToArray();
-        for (int i = 0; i < vertices.Length; i++)
+        List<Vector3> positions = new List<Vector3>();
+        List<int> indices = new List<int>();
+        Dictionary<string, int> vertDict = new Dictionary<string, int>();
+
+        int GetOrCreateVertex(Vector3 pos)
         {
-            float x = vertices[i].x;
-            float z = vertices[i].z;
+            string key = $"{pos.x:F6}_{pos.y:F6}_{pos.z:F6}";
+            if (vertDict.TryGetValue(key, out int index))
+                return index;
 
-            float y = Mathf.Sin(x) * Mathf.Sin(z) * waveHeight;
-            vertices[i] = new Vector3(x, y, z);
+            index = positions.Count;
+            positions.Add(pos.normalized * radius);
+            vertDict[key] = index;
+            return index;
         }
 
-        planeMesh.positions = vertices.ToList();
-        planeMesh.ToMesh();
-        planeMesh.Refresh(RefreshMask.All);
+        int GetMidpoint(int v1, int v2)
+        {
+            Vector3 mid = (positions[v1] + positions[v2]) / 2f;
+            return GetOrCreateVertex(mid);
+        }
 
-        return planeMesh;
+        // Create initial icosahedron
+        float t = (1f + Mathf.Sqrt(5f)) / 2f;
+
+        GetOrCreateVertex(new Vector3(-1, t, 0));
+        GetOrCreateVertex(new Vector3(1, t, 0));
+        GetOrCreateVertex(new Vector3(-1, -t, 0));
+        GetOrCreateVertex(new Vector3(1, -t, 0));
+        GetOrCreateVertex(new Vector3(0, -1, t));
+        GetOrCreateVertex(new Vector3(0, 1, t));
+        GetOrCreateVertex(new Vector3(0, -1, -t));
+        GetOrCreateVertex(new Vector3(0, 1, -t));
+        GetOrCreateVertex(new Vector3(t, 0, -1));
+        GetOrCreateVertex(new Vector3(t, 0, 1));
+        GetOrCreateVertex(new Vector3(-t, 0, -1));
+        GetOrCreateVertex(new Vector3(-t, 0, 1));
+
+        // Initial 20 faces
+        List<int[]> triangles = new List<int[]>
+        {
+            new int[] {0, 11, 5}, new int[] {0, 5, 1}, new int[] {0, 1, 7}, new int[] {0, 7, 10}, new int[] {0, 10, 11},
+            new int[] {1, 5, 9}, new int[] {5, 11, 4}, new int[] {11, 10, 2}, new int[] {10, 7, 6}, new int[] {7, 1, 8},
+            new int[] {3, 9, 4}, new int[] {3, 4, 2}, new int[] {3, 2, 6}, new int[] {3, 6, 8}, new int[] {3, 8, 9},
+            new int[] {4, 9, 5}, new int[] {2, 4, 11}, new int[] {6, 2, 10}, new int[] {8, 6, 7}, new int[] {9, 8, 1}
+        };
+
+        // Subdivide
+        for (int i = 0; i < subdivisions; i++)
+        {
+            List<int[]> newTriangles = new List<int[]>();
+            foreach (var tri in triangles)
+            {
+                int a = GetMidpoint(tri[0], tri[1]);
+                int b = GetMidpoint(tri[1], tri[2]);
+                int c = GetMidpoint(tri[2], tri[0]);
+
+                newTriangles.Add(new int[] { tri[0], a, c });
+                newTriangles.Add(new int[] { tri[1], b, a });
+                newTriangles.Add(new int[] { tri[2], c, b });
+                newTriangles.Add(new int[] { a, b, c });
+            }
+            triangles = newTriangles;
+        }
+
+        // Create faces
+        List<Face> faces = new List<Face>();
+        foreach (var tri in triangles)
+        {
+            faces.Add(new Face(tri));
+        }
+
+        mesh.RebuildWithPositionsAndFaces(positions.ToArray(), faces);
+        mesh.ToMesh();
+        mesh.Refresh(RefreshMask.All);
+
+        return mesh;
     }
-    /// <summary>
-    /// Create a dome plane
-    /// </summary>
-    private ProBuilderMesh GenerateDomePlane(float width, float depth, int widthSubdivisions, int depthSubdivisions, float domeHeight)
-    {
-        widthSubdivisions = Mathf.Max(1, widthSubdivisions);
-        depthSubdivisions = Mathf.Max(1, depthSubdivisions);
 
-        ProBuilderMesh planeMesh = ShapeGenerator.GeneratePlane(PivotLocation.Center, width, depth, widthSubdivisions, depthSubdivisions, Axis.Up);
+    /// <summary>
+    /// Generate a properly welded cylinder
+    /// </summary>
+    private ProBuilderMesh GenerateWeldedCylinder(float radius, float height, int segments, int heightSegments)
+    {
+        segments = Mathf.Max(3, segments);
+        heightSegments = Mathf.Max(1, heightSegments);
+
+        GameObject go = new GameObject("WeldedCylinder");
+        ProBuilderMesh mesh = go.AddComponent<ProBuilderMesh>();
+
+        List<Vector3> positions = new List<Vector3>();
+        List<Face> faces = new List<Face>();
+        Dictionary<string, int> vertDict = new Dictionary<string, int>();
+
+        int GetVertex(float x, float y, float z)
+        {
+            string key = $"{x:F4}_{y:F4}_{z:F4}";
+            if (vertDict.TryGetValue(key, out int index))
+                return index;
+
+            index = positions.Count;
+            positions.Add(new Vector3(x, y, z));
+            vertDict[key] = index;
+            return index;
+        }
+
+        float halfHeight = height / 2f;
+
+        for (int h = 0; h <= heightSegments; h++)
+        {
+            float y = -halfHeight + (height * h / heightSegments);
+            for (int s = 0; s < segments; s++)
+            {
+                float angle = (float)s / segments * Mathf.PI * 2f;
+                float x = Mathf.Cos(angle) * radius;
+                float z = Mathf.Sin(angle) * radius;
+                GetVertex(x, y, z);
+            }
+        }
+
+        for (int h = 0; h < heightSegments; h++)
+        {
+            for (int s = 0; s < segments; s++)
+            {
+                float y0 = -halfHeight + (height * h / heightSegments);
+                float y1 = -halfHeight + (height * (h + 1) / heightSegments);
+
+                float angle0 = (float)s / segments * Mathf.PI * 2f;
+                float angle1 = (float)((s + 1) % segments) / segments * Mathf.PI * 2f;
+
+                int v0 = vertDict[$"{Mathf.Cos(angle0) * radius:F4}_{y0:F4}_{Mathf.Sin(angle0) * radius:F4}"];
+                int v1 = vertDict[$"{Mathf.Cos(angle1) * radius:F4}_{y0:F4}_{Mathf.Sin(angle1) * radius:F4}"];
+                int v2 = vertDict[$"{Mathf.Cos(angle1) * radius:F4}_{y1:F4}_{Mathf.Sin(angle1) * radius:F4}"];
+                int v3 = vertDict[$"{Mathf.Cos(angle0) * radius:F4}_{y1:F4}_{Mathf.Sin(angle0) * radius:F4}"];
+
+                faces.Add(new Face(new int[] { v0, v1, v2 }));
+                faces.Add(new Face(new int[] { v0, v2, v3 }));
+            }
+        }
+
+        int centerTop = GetVertex(0, halfHeight, 0);
+        int centerBottom = GetVertex(0, -halfHeight, 0);
+
+        for (int s = 0; s < segments; s++)
+        {
+            float angle0 = (float)s / segments * Mathf.PI * 2f;
+            float angle1 = (float)((s + 1) % segments) / segments * Mathf.PI * 2f;
+
+            int vTop0 = vertDict[$"{Mathf.Cos(angle0) * radius:F4}_{halfHeight:F4}_{Mathf.Sin(angle0) * radius:F4}"];
+            int vTop1 = vertDict[$"{Mathf.Cos(angle1) * radius:F4}_{halfHeight:F4}_{Mathf.Sin(angle1) * radius:F4}"];
+            faces.Add(new Face(new int[] { centerTop, vTop1, vTop0 }));
+
+            int vBot0 = vertDict[$"{Mathf.Cos(angle0) * radius:F4}_{-halfHeight:F4}_{Mathf.Sin(angle0) * radius:F4}"];
+            int vBot1 = vertDict[$"{Mathf.Cos(angle1) * radius:F4}_{-halfHeight:F4}_{Mathf.Sin(angle1) * radius:F4}"];
+            faces.Add(new Face(new int[] { centerBottom, vBot0, vBot1 }));
+        }
+
+        mesh.RebuildWithPositionsAndFaces(positions.ToArray(), faces);
+        mesh.ToMesh();
+        mesh.Refresh(RefreshMask.All);
+
+        return mesh;
+    }
+
+    /// <summary>
+    /// Generate a properly welded cone
+    /// </summary>
+    private ProBuilderMesh GenerateWeldedCone(float radius, float height, int segments)
+    {
+        segments = Mathf.Max(3, segments);
+
+        GameObject go = new GameObject("WeldedCone");
+        ProBuilderMesh mesh = go.AddComponent<ProBuilderMesh>();
+
+        List<Vector3> positions = new List<Vector3>();
+        List<Face> faces = new List<Face>();
+
+        positions.Add(new Vector3(0, height / 2f, 0));
+
+        int centerBottom = positions.Count;
+        positions.Add(new Vector3(0, -height / 2f, 0));
+
+        for (int s = 0; s < segments; s++)
+        {
+            float angle = (float)s / segments * Mathf.PI * 2f;
+            float x = Mathf.Cos(angle) * radius;
+            float z = Mathf.Sin(angle) * radius;
+            positions.Add(new Vector3(x, -height / 2f, z));
+        }
+
+        for (int s = 0; s < segments; s++)
+        {
+            int v0 = 0;
+            int v1 = 2 + s;
+            int v2 = 2 + ((s + 1) % segments);
+            faces.Add(new Face(new int[] { v0, v1, v2 }));
+        }
+
+        for (int s = 0; s < segments; s++)
+        {
+            int v0 = centerBottom;
+            int v1 = 2 + s;
+            int v2 = 2 + ((s + 1) % segments);
+            faces.Add(new Face(new int[] { v0, v2, v1 }));
+        }
+
+        mesh.RebuildWithPositionsAndFaces(positions.ToArray(), faces);
+        mesh.ToMesh();
+        mesh.Refresh(RefreshMask.All);
+
+        return mesh;
+    }
+
+    /// <summary>
+    /// Generate a properly welded pipe (hollow cylinder)
+    /// </summary>
+    private ProBuilderMesh GenerateWeldedPipe(float outerRadius, float height, float thickness, int segments, int heightSegments)
+    {
+        segments = Mathf.Max(3, segments);
+        heightSegments = Mathf.Max(0, heightSegments);
+        float innerRadius = Mathf.Max(0.01f, outerRadius - thickness);
+
+        GameObject go = new GameObject("WeldedPipe");
+        ProBuilderMesh mesh = go.AddComponent<ProBuilderMesh>();
+
+        List<Vector3> positions = new List<Vector3>();
+        List<Face> faces = new List<Face>();
+        Dictionary<string, int> vertDict = new Dictionary<string, int>();
+
+        int GetVertex(float x, float y, float z)
+        {
+            string key = $"{x:F4}_{y:F4}_{z:F4}";
+            if (vertDict.TryGetValue(key, out int index))
+                return index;
+
+            index = positions.Count;
+            positions.Add(new Vector3(x, y, z));
+            vertDict[key] = index;
+            return index;
+        }
+
+        float halfHeight = height / 2f;
+        int totalHeightSegments = heightSegments + 1;
+
+        // Generate all vertices (outer and inner rings)
+        for (int h = 0; h <= totalHeightSegments; h++)
+        {
+            float y = -halfHeight + (height * h / totalHeightSegments);
+
+            for (int s = 0; s < segments; s++)
+            {
+                float angle = (float)s / segments * Mathf.PI * 2f;
+                float cosA = Mathf.Cos(angle);
+                float sinA = Mathf.Sin(angle);
+
+                // Outer vertex
+                GetVertex(cosA * outerRadius, y, sinA * outerRadius);
+
+                // Inner vertex
+                GetVertex(cosA * innerRadius, y, sinA * innerRadius);
+            }
+        }
+
+        // Create outer side faces
+        for (int h = 0; h < totalHeightSegments; h++)
+        {
+            for (int s = 0; s < segments; s++)
+            {
+                float y0 = -halfHeight + (height * h / totalHeightSegments);
+                float y1 = -halfHeight + (height * (h + 1) / totalHeightSegments);
+                float angle0 = (float)s / segments * Mathf.PI * 2f;
+                float angle1 = (float)((s + 1) % segments) / segments * Mathf.PI * 2f;
+
+                int v0 = vertDict[$"{Mathf.Cos(angle0) * outerRadius:F4}_{y0:F4}_{Mathf.Sin(angle0) * outerRadius:F4}"];
+                int v1 = vertDict[$"{Mathf.Cos(angle1) * outerRadius:F4}_{y0:F4}_{Mathf.Sin(angle1) * outerRadius:F4}"];
+                int v2 = vertDict[$"{Mathf.Cos(angle1) * outerRadius:F4}_{y1:F4}_{Mathf.Sin(angle1) * outerRadius:F4}"];
+                int v3 = vertDict[$"{Mathf.Cos(angle0) * outerRadius:F4}_{y1:F4}_{Mathf.Sin(angle0) * outerRadius:F4}"];
+
+                faces.Add(new Face(new int[] { v0, v1, v2 }));
+                faces.Add(new Face(new int[] { v0, v2, v3 }));
+            }
+        }
+
+        // Create inner side faces (reversed winding for inward-facing normals)
+        for (int h = 0; h < totalHeightSegments; h++)
+        {
+            for (int s = 0; s < segments; s++)
+            {
+                float y0 = -halfHeight + (height * h / totalHeightSegments);
+                float y1 = -halfHeight + (height * (h + 1) / totalHeightSegments);
+                float angle0 = (float)s / segments * Mathf.PI * 2f;
+                float angle1 = (float)((s + 1) % segments) / segments * Mathf.PI * 2f;
+
+                int v0 = vertDict[$"{Mathf.Cos(angle0) * innerRadius:F4}_{y0:F4}_{Mathf.Sin(angle0) * innerRadius:F4}"];
+                int v1 = vertDict[$"{Mathf.Cos(angle1) * innerRadius:F4}_{y0:F4}_{Mathf.Sin(angle1) * innerRadius:F4}"];
+                int v2 = vertDict[$"{Mathf.Cos(angle1) * innerRadius:F4}_{y1:F4}_{Mathf.Sin(angle1) * innerRadius:F4}"];
+                int v3 = vertDict[$"{Mathf.Cos(angle0) * innerRadius:F4}_{y1:F4}_{Mathf.Sin(angle0) * innerRadius:F4}"];
+
+                faces.Add(new Face(new int[] { v0, v2, v1 }));
+                faces.Add(new Face(new int[] { v0, v3, v2 }));
+            }
+        }
+
+        // Create top and bottom ring caps
+        for (int s = 0; s < segments; s++)
+        {
+            float angle0 = (float)s / segments * Mathf.PI * 2f;
+            float angle1 = (float)((s + 1) % segments) / segments * Mathf.PI * 2f;
+
+            // Top ring
+            int vTopOuter0 = vertDict[$"{Mathf.Cos(angle0) * outerRadius:F4}_{halfHeight:F4}_{Mathf.Sin(angle0) * outerRadius:F4}"];
+            int vTopOuter1 = vertDict[$"{Mathf.Cos(angle1) * outerRadius:F4}_{halfHeight:F4}_{Mathf.Sin(angle1) * outerRadius:F4}"];
+            int vTopInner0 = vertDict[$"{Mathf.Cos(angle0) * innerRadius:F4}_{halfHeight:F4}_{Mathf.Sin(angle0) * innerRadius:F4}"];
+            int vTopInner1 = vertDict[$"{Mathf.Cos(angle1) * innerRadius:F4}_{halfHeight:F4}_{Mathf.Sin(angle1) * innerRadius:F4}"];
+
+            faces.Add(new Face(new int[] { vTopOuter0, vTopOuter1, vTopInner1 }));
+            faces.Add(new Face(new int[] { vTopOuter0, vTopInner1, vTopInner0 }));
+
+            // Bottom ring
+            int vBotOuter0 = vertDict[$"{Mathf.Cos(angle0) * outerRadius:F4}_{-halfHeight:F4}_{Mathf.Sin(angle0) * outerRadius:F4}"];
+            int vBotOuter1 = vertDict[$"{Mathf.Cos(angle1) * outerRadius:F4}_{-halfHeight:F4}_{Mathf.Sin(angle1) * outerRadius:F4}"];
+            int vBotInner0 = vertDict[$"{Mathf.Cos(angle0) * innerRadius:F4}_{-halfHeight:F4}_{Mathf.Sin(angle0) * innerRadius:F4}"];
+            int vBotInner1 = vertDict[$"{Mathf.Cos(angle1) * innerRadius:F4}_{-halfHeight:F4}_{Mathf.Sin(angle1) * innerRadius:F4}"];
+
+            faces.Add(new Face(new int[] { vBotOuter0, vBotInner1, vBotOuter1 }));
+            faces.Add(new Face(new int[] { vBotOuter0, vBotInner0, vBotInner1 }));
+        }
+
+        mesh.RebuildWithPositionsAndFaces(positions.ToArray(), faces);
+        mesh.ToMesh();
+        mesh.Refresh(RefreshMask.All);
+
+        return mesh;
+    }
+
+    /// <summary>
+    /// Generate a properly welded plane
+    /// </summary>
+    private ProBuilderMesh GenerateWeldedPlane(float width, float depth, int widthSegments, int depthSegments)
+    {
+        widthSegments = Mathf.Max(1, widthSegments);
+        depthSegments = Mathf.Max(1, depthSegments);
+
+        GameObject go = new GameObject("WeldedPlane");
+        ProBuilderMesh mesh = go.AddComponent<ProBuilderMesh>();
+
+        List<Vector3> positions = new List<Vector3>();
+        List<Face> faces = new List<Face>();
+
+        float halfWidth = width / 2f;
+        float halfDepth = depth / 2f;
+
+        for (int z = 0; z <= depthSegments; z++)
+        {
+            for (int x = 0; x <= widthSegments; x++)
+            {
+                float px = -halfWidth + (width * x / widthSegments);
+                float pz = -halfDepth + (depth * z / depthSegments);
+                positions.Add(new Vector3(px, 0, pz));
+            }
+        }
+
+        for (int z = 0; z < depthSegments; z++)
+        {
+            for (int x = 0; x < widthSegments; x++)
+            {
+                int v0 = z * (widthSegments + 1) + x;
+                int v1 = z * (widthSegments + 1) + x + 1;
+                int v2 = (z + 1) * (widthSegments + 1) + x + 1;
+                int v3 = (z + 1) * (widthSegments + 1) + x;
+
+                faces.Add(new Face(new int[] { v0, v1, v2 }));
+                faces.Add(new Face(new int[] { v0, v2, v3 }));
+            }
+        }
+
+        mesh.RebuildWithPositionsAndFaces(positions.ToArray(), faces);
+        mesh.ToMesh();
+        mesh.Refresh(RefreshMask.All);
+
+        return mesh;
+    }
+
+    /// <summary>
+    /// Generate a properly welded dome plane
+    /// </summary>
+    private ProBuilderMesh GenerateWeldedDomePlane(float width, float depth, int widthSegments, int depthSegments, float domeHeight)
+    {
+        ProBuilderMesh planeMesh = GenerateWeldedPlane(width, depth, widthSegments, depthSegments);
 
         var vertices = planeMesh.positions.ToArray();
         float radiusX = width / 2f;
@@ -600,18 +1000,35 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
         {
             float normalizedX = vertices[i].x / radiusX;
             float normalizedZ = vertices[i].z / radiusZ;
-
             float ellipticalDist = Mathf.Sqrt(normalizedX * normalizedX + normalizedZ * normalizedZ);
 
-            if (ellipticalDist > 1f)
-            {
-                ellipticalDist = 1f;
-            }
+            if (ellipticalDist > 1f) ellipticalDist = 1f;
 
             float heightFactor = Mathf.Cos(ellipticalDist * Mathf.PI / 2f);
-            float y = heightFactor * domeHeight;
+            vertices[i].y = heightFactor * domeHeight;
+        }
 
-            vertices[i].y = y;
+        planeMesh.positions = vertices.ToList();
+        planeMesh.ToMesh();
+        planeMesh.Refresh(RefreshMask.All);
+
+        return planeMesh;
+    }
+
+    /// <summary>
+    /// Generate a properly welded wavy plane
+    /// </summary>
+    private ProBuilderMesh GenerateWeldedWavyPlane(float width, float depth, int widthSegments, int depthSegments, float waveHeight)
+    {
+        ProBuilderMesh planeMesh = GenerateWeldedPlane(width, depth, widthSegments, depthSegments);
+
+        var vertices = planeMesh.positions.ToArray();
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            float x = vertices[i].x;
+            float z = vertices[i].z;
+            float y = Mathf.Sin(x) * Mathf.Sin(z) * waveHeight;
+            vertices[i] = new Vector3(x, y, z);
         }
 
         planeMesh.positions = vertices.ToList();
@@ -628,7 +1045,7 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
     {
         if (currentModel != null)
         {
-            if (currentShapeType == ModelType.Pipe)//pipe,
+            if (currentShapeType == ModelType.Pipe)
             {
                 ProBuilderMesh mesh = CreateModelByType(currentShapeType);
                 mesh.transform.position = currentModel.GetPosition();
@@ -645,9 +1062,9 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
 
                 currentModel.SetScale(newScale);
             }
-
         }
     }
+
     /// <summary>
     /// Sub d was changed - recreate the model
     /// </summary>
@@ -661,6 +1078,4 @@ Mathf.RoundToInt(subDivisionSlider.GetValueAsFloat()), Mathf.RoundToInt(ySubDivi
             Destroy(mesh.gameObject);
         }
     }
-
-
 }

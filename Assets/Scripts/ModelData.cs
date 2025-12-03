@@ -25,6 +25,11 @@ public class ModelData : MonoBehaviour
     public XRGrabInteractable interactable;
     public SnappingGrabTransformer grabTransform;
 
+    // PNS Integration
+    [Header("PNS Settings")]
+    public bool enablePNSUpdates = true; // Toggle PNS updates on/off
+    public bool autoFlushOnEdit = false; // Automatically flush dirty vertices on edit
+    private List<int> pendingVertexUpdates = new List<int>(); // Track vertices to update
 
 
     public bool GetIsSelected()
@@ -46,7 +51,25 @@ public class ModelData : MonoBehaviour
         ViewManager.Instance.OnShadingChanged.AddListener(ShadingUpdated);
         SelectionManager.Instance.OnSelectionChanged.AddListener(OnSelectionChanged);
 
+        // Initiliaze PNS if enabled
+        if (enablePNSUpdates && PNSModelIntegration.Instance != null)
+        {
+            StartCoroutine(InitializePNSDelayed());
+        }
+
     }
+
+    // Delayed initialization to ensure mesh is fully set up
+    private IEnumerator InitializePNSDelayed()
+    {
+        yield return new WaitForEndOfFrame();
+        if (editingModel != null)
+        {
+            this.GetPnSpline(); // Create initial PnSpline
+            Debug.Log($"PnSpline initialized for {modelName}");
+        }
+    }
+
     public void DeleteModel()
     {
         if (interactable != null) interactable.selectEntered.RemoveListener(OnGrab);
@@ -55,6 +78,12 @@ public class ModelData : MonoBehaviour
         ViewManager.Instance.OnShadingChanged.RemoveListener(ShadingUpdated);
         ModelEditingPanel.Instance.OnTransformTypeChanged.RemoveListener(OnTransformTypeChanged);
         SelectionManager.Instance.OnSelectionChanged.RemoveListener(OnSelectionChanged);
+
+        // Clean up PNS cache
+        if (PNSModelIntegration.Instance != null)
+        {
+            PNSModelIntegration.Instance.RemovePnSplineFromCache(modelID);
+        }
 
         ModelsManager.Instance.UnTrackModel(this);
         SelectionManager.Instance.RemoveModelFromSelection(this);
@@ -214,12 +243,26 @@ public class ModelData : MonoBehaviour
 
         editingModel.ToMesh();
         editingModel.Refresh();
+
+        // PNS Integration: Recreate PnSpline for topology changes
+        if (enablePNSUpdates && PNSModelIntegration.Instance != null)
+        {
+            this.GetPnSpline(forceRecreate: true);
+            Debug.Log($"PnSpline recreated for {modelName} due to topology change");
+        }
+
         Debug.Log("UpdateMeshCreation");
     }
     public void UpdateMeshEdit()
     {
         editingModel.Refresh();
         editingModel.Refresh();
+
+        // PNS Integration: Auto-flush if enabled
+        if (enablePNSUpdates && autoFlushOnEdit && PNSModelIntegration.Instance != null)
+        {
+            FlushPendingPNSUpdates();
+        }
 
         Debug.Log("UpdateMeshEdit");
         //smoothedMesh.UpdateMesh();
@@ -228,6 +271,13 @@ public class ModelData : MonoBehaviour
     {
         editingModel.ToMesh();
         editingModel.Refresh();
+
+        // PNS Integration: Flush all pending updates
+        if (enablePNSUpdates && PNSModelIntegration.Instance != null)
+        {
+            FlushPendingPNSUpdates();
+        }
+
         Debug.Log("FinalizeEditModel");
     }
 
@@ -278,15 +328,59 @@ public class ModelData : MonoBehaviour
     public void AddOffsetToVerts(Vector3 offset, int[] verts)
     {
         UnityEngine.ProBuilder.VertexPositioning.TranslateVerticesInWorldSpace(GetEditModel(), verts, offset);
+
+        // PNS Integration: Mark vertices as dirty
+        if (enablePNSUpdates && PNSModelIntegration.Instance != null)
+        {
+            foreach (int vertIndex in verts)
+            {
+                if (!pendingVertexUpdates.Contains(vertIndex))
+                {
+                    pendingVertexUpdates.Add(vertIndex);
+                }
+            }
+            this.MarkVerticesDirty(verts);
+        }
+
         UpdateMeshEdit();
     }
 
+    #region PNS Integration Methods
 
+    /// <summary>
+    /// Flush all pending PNS vertex updates
+    /// </summary>
+    public void FlushPendingPNSUpdates()
+    {
+        if (pendingVertexUpdates.Count > 0)
+        {
+            uint[] affectedPatches = this.FlushDirtyVertices();
+            Debug.Log($"PNS Update: {affectedPatches.Length} patches affected");
+            pendingVertexUpdates.Clear();
+        }
+    }
 
+    /// <summary>
+    /// Manually update specific vertices in the PnSpline
+    /// </summary>
+    public void UpdatePNSVertices(int[] vertexIndices)
+    {
+        if (!enablePNSUpdates || PNSModelIntegration.Instance == null) return;
 
+        uint[] affectedPatches = this.UpdatePnSpline(vertexIndices);
+        Debug.Log($"PNS Update: Updated {vertexIndices.Length} vertices, " +
+                  $"affecting {affectedPatches.Length} patches");
+    }
 
+    /// <summary>
+    /// Get the current PnSpline for this model
+    /// </summary>
+    public PolyhedralNetSplines.PnSpline GetCurrentPnSpline()
+    {
+        if (!enablePNSUpdates || PNSModelIntegration.Instance == null) return null;
+        return this.GetPnSpline();
+    }
 
-
-
+    #endregion
 
 }
