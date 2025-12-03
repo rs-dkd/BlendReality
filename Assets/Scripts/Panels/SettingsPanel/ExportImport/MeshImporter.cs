@@ -10,7 +10,7 @@ using UnityEngine.ProBuilder;
 /// </summary>
 public class MeshImporter : MonoBehaviour
 {
-    //Singleton pattern 
+    // Singleton pattern 
     public static MeshImporter Instance { get; private set; }
     void Awake()
     {
@@ -32,7 +32,7 @@ public class MeshImporter : MonoBehaviour
     /// </summary>
     public void LoadFile(string name, string path, bool combineMesh)
     {
-        // STEP 1: Parse quad topology BEFORE OBJLoader triangulates
+        // Parse quad topology BEFORE OBJLoader triangulates
         Dictionary<string, QuadTopologyManager.QuadTopologyData> quadTopologyCache = null;
 
         if (preserveQuadTopology && QuadTopologyManager.Instance != null)
@@ -41,11 +41,11 @@ public class MeshImporter : MonoBehaviour
             Debug.Log($"[QuadImport] Pre-parsed quad topology for {quadTopologyCache.Count} sub-meshes");
         }
 
-        // STEP 2: Use OBJLoader to import (this will triangulate)
+        // Use OBJLoader to import (this will triangulate)
         GameObject go = new OBJLoader().Load(path);
         MeshFilter[] meshFilters = go.GetComponentsInChildren<MeshFilter>();
 
-        //Combine all meshes
+        // Combine all meshes
         if (combineMesh)
         {
             CombineInstance[] combine = new CombineInstance[meshFilters.Length];
@@ -69,7 +69,7 @@ public class MeshImporter : MonoBehaviour
 
             CreateModelDataFromMesh(combinedMesh, name, mergedQuadData);
         }
-        //Create models separately
+        // Create models separately
         else
         {
             int subMeshIndex = 0;
@@ -77,7 +77,7 @@ public class MeshImporter : MonoBehaviour
             {
                 if (meshFilter.sharedMesh != null)
                 {
-                    // --- Fix to correct meshes position ---
+                    // Correct mesh position to world space
                     Mesh worldSpaceMesh = new Mesh();
 
                     Mesh localMesh = meshFilter.sharedMesh;
@@ -99,7 +99,6 @@ public class MeshImporter : MonoBehaviour
                     worldSpaceMesh.normals = worldNormals;
                     worldSpaceMesh.triangles = localMesh.triangles;
                     worldSpaceMesh.uv = localMesh.uv;
-                    // --- End Fix ---
 
                     // Get corresponding quad topology if available
                     QuadTopologyManager.QuadTopologyData quadData = null;
@@ -122,7 +121,7 @@ public class MeshImporter : MonoBehaviour
             }
         }
 
-        //Clean up
+        // Clean up
         Destroy(go);
     }
 
@@ -345,7 +344,6 @@ public class MeshImporter : MonoBehaviour
 
             if (mesh.uv != null && mesh.uv.Length > 0)
             {
-                Debug.Log("Setting UVs from raw data");
                 proBuilderMesh.textures = mesh.uv;
             }
 
@@ -353,61 +351,99 @@ public class MeshImporter : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"Failed to create ProBuilder mesh from raw data: {name}. Error: {e.Message}");
-            Debug.LogError($"Stack trace: {e.StackTrace}");
+            Debug.LogError($"Failed to create ProBuilder mesh: {e.Message}");
             Destroy(meshObject);
             return;
         }
 
-        //Create our ModelData model from the data
+        // --- Smart Spawn Calculation ---
+
+        // 1. Calculate the object's physical footprint radius
+        mesh.RecalculateBounds();
+        float objectRadius = Mathf.Max(mesh.bounds.extents.x, mesh.bounds.extents.z);
+
+        // 2. Find the lowest point (feet) for floor alignment
+        float minLocalY = float.MaxValue;
+        if (mesh.vertices.Length > 0)
+        {
+            foreach (var v in mesh.vertices)
+            {
+                if (v.y < minLocalY) minLocalY = v.y;
+            }
+        }
+        else
+        {
+            minLocalY = 0f;
+        }
+
+        // 3. Get User's Head Position and Forward Vector
+        Vector3 spawnOrigin = Vector3.zero;
+        Vector3 flatForward = Vector3.forward;
+
+        if (Camera.main != null)
+        {
+            Transform cam = Camera.main.transform;
+            spawnOrigin = cam.position;
+
+            // Project forward vector onto the floor (ignore looking up/down)
+            flatForward = Vector3.ProjectOnPlane(cam.forward, Vector3.up).normalized;
+            if (flatForward == Vector3.zero) flatForward = Vector3.forward;
+        }
+
+        // 4. Calculate Safe Spawn Position (User position + Object radius + Buffer)
+        float userPersonalSpace = 0.5f;
+        float spawnDistance = userPersonalSpace + objectRadius + 1.0f; // Add 1m extra buffer
+
+        Vector3 spawnPos = spawnOrigin + (flatForward * spawnDistance);
+
+        // 5. Snap to Floor
+        spawnPos.y = -minLocalY;
+
+        // Create ModelData model from the data
         GameObject myObject = new GameObject();
         ModelData modelData = myObject.AddComponent<ModelData>();
-        modelData.SetupModel(proBuilderMesh, new Vector3(), name);
 
-        // STEP 3: Integrate quad topology if available
+        // Pass calculated spawn position
+        modelData.SetupModel(proBuilderMesh, spawnPos, name);
+
+        // Integrate quad topology if available
         if (preserveQuadTopology && quadData != null && QuadTopologyManager.Instance != null)
         {
-            // Cache the quad data so CreatePnSplineFromQuadTopology can find it
-            QuadTopologyManager.Instance.CacheQuadTopology(modelData.modelID, quadData);
+            // Update Quad Data to match the new World Position
+            // This ensures PnS library coordinates match the visual mesh
+            if (spawnPos != Vector3.zero)
+            {
+                for (int i = 0; i < quadData.vertices.Count; i++)
+                {
+                    quadData.vertices[i] += spawnPos;
+                }
+            }
 
-            // Build triangle-to-quad mapping
+            QuadTopologyManager.Instance.CacheQuadTopology(modelData.modelID, quadData);
             QuadTopologyManager.Instance.BuildTriangleToQuadMapping(modelData, quadData);
 
-            // Initialize PnSpline from quad topology
             if (modelData.enablePNSUpdates && PNSModelIntegration.Instance != null)
             {
                 var spline = modelData.CreatePnSplineFromQuadTopology(forceRecreate: true);
-
                 if (spline != null)
                 {
                     PNSModelIntegration.Instance.CachePnSpline(modelData.modelID, spline);
-
-                    int quadCount = quadData.quadPolygons.Count(q => !q.isTriangle);
-                    int triCount = quadData.quadPolygons.Count(q => q.isTriangle);
-                    Debug.Log($"[QuadImport] PnSpline created for {name}:");
-                    Debug.Log($"  • {quadCount} quads + {triCount} triangles = {quadData.quadPolygons.Count} total polygons");
-                    Debug.Log($"  • {spline.NumPatches} PnS patches created");
-                    Debug.Log($"  • Refinement ratio: {(float)spline.NumPatches / quadData.quadPolygons.Count:F2}x");
+                    Debug.Log($"[QuadImport] PnSpline created for {name}");
                 }
             }
         }
         else if (modelData.enablePNSUpdates && PNSModelIntegration.Instance != null)
         {
-            // Fallback: Try to reconstruct quad topology from triangles
-            Debug.LogWarning($"[QuadImport] No pre-parsed quad data for {name}, attempting reconstruction...");
+            // Fallback reconstruction
             var reconstructedQuadData = QuadTopologyManager.Instance.ReconstructQuadTopologyFromTriangles(modelData);
-
             if (reconstructedQuadData != null)
             {
                 var spline = modelData.CreatePnSplineFromQuadTopology(forceRecreate: true);
                 if (spline != null)
                 {
                     PNSModelIntegration.Instance.CachePnSpline(modelData.modelID, spline);
-                    Debug.Log($"[QuadImport] PnSpline created from reconstructed topology: {spline.NumPatches} patches");
                 }
             }
         }
-
-        return;
     }
 }

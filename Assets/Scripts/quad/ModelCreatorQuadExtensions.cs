@@ -4,6 +4,7 @@ using UnityEngine.ProBuilder.MeshOperations;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using Debug = UnityEngine.Debug;
 
 /// <summary>
 /// Updates to ModelCreator to support quad topology preservation
@@ -47,6 +48,30 @@ public static class ModelCreatorQuadExtensions
             Debug.LogError($"[QuadImport] Failed to import OBJ to ProBuilder");
             QuadTopologyManager.Instance.RemoveQuadTopology(tempModelID);
             return null;
+        }
+
+        // Find the lowest Y value in the local mesh coordinates
+        float minLocalY = float.MaxValue;
+        if (pbMesh.positions != null && pbMesh.positions.Count > 0)
+        {
+            foreach (var vert in pbMesh.positions)
+            {
+                if (vert.y < minLocalY) minLocalY = vert.y;
+            }
+        }
+        else
+        {
+            minLocalY = 0f;
+        }
+
+        // Calculate the World Y position of the "feet" if we spawned it at the requested position
+        float currentBottomY = spawnPosition.y + minLocalY;
+
+        // If the feet are below 0, lift the spawn position up
+        // This forces the lowest point of the mesh to sit exactly at World Y = 0
+        if (currentBottomY < 0)
+        {
+            spawnPosition.y = -minLocalY;
         }
 
         // STEP 3: Create ModelData with the triangulated mesh
