@@ -60,7 +60,7 @@ public class ModelData : MonoBehaviour
     }
 
     // Delayed initialization to ensure mesh is fully set up
-    private IEnumerator InitializePNSDelayed()
+    private System.Collections.IEnumerator InitializePNSDelayed()
     {
         yield return new WaitForEndOfFrame();
         if (editingModel != null)
