@@ -61,14 +61,14 @@ public class ModelEditingPanel : MonoBehaviour
     [SerializeField] private ToggleGroupUI transformTypeToggleGroup;
 
     private TransformType currentTransformType = TransformType.Free;
-    private String[] transformTypeOptions = new String[] { "Select", "Free", "Move", "Rotate", "Scale" };
+    private String[] transformTypeOptions = new String[] { "Select", "Free", "Move" }; // "Rotate", "Scale"
 
     //Gizmo Space
     [Tooltip("Gizmo Space (local, world) Toggle Group")]
     [SerializeField] private ToggleGroupUI gizmoSpaceToggleGroup;
 
     private GizmoSpace currentGizmoSpace = GizmoSpace.World;
-    private String[] gizmoSpaceOptions = new String[] { "World", "Local" };
+    private String[] gizmoSpaceOptions = new String[] { "World" };// "Local"
 
     //snapping
     [Tooltip("Move Snap UI Group")]
@@ -341,15 +341,15 @@ public class ModelEditingPanel : MonoBehaviour
             moveSnappingPanel.SetActive(true);
 
         }
-        else if (currentTransformType == TransformType.Rotate)
-        {
-            rotateSnappingPanel.SetActive(true);
-        }
-        else if (currentTransformType == TransformType.Scale)
-        {
-            scaleSnappingPanel.SetActive(true);
+        //else if (currentTransformType == TransformType.Rotate)
+        //{
+        //    rotateSnappingPanel.SetActive(true);
+        //}
+        //else if (currentTransformType == TransformType.Scale)
+        //{
+        //    scaleSnappingPanel.SetActive(true);
 
-        }
+        //}
     }
     /// <summary>
     /// When model changes or created call this to create the control points when its on the correct editmode

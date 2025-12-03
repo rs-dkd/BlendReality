@@ -5,7 +5,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
-using static UnityEngine.Rendering.DebugUI;
 
 /// <summary>
 /// A custom Event that passes a float value when the slider is changed.

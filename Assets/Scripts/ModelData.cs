@@ -1,13 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
-using UnityEngine.XR.Interaction.Toolkit.Transformers;
 using System.Linq;
 using UnityEngine.XR.Interaction.Toolkit;
-using UnityEditorInternal;
 public class ModelData : MonoBehaviour
 {
     public static int modelIDCounter = 0;
@@ -186,15 +182,15 @@ public class ModelData : MonoBehaviour
         modelName = name;
 
         meshRender = editingModel.GetComponent<MeshRenderer>();
-        meshCollider = editingModel.AddComponent<MeshCollider>();
+        meshCollider = editingModel.gameObject.AddComponent<MeshCollider>();
         meshFilter = editingModel.GetComponent<MeshFilter>();
         modelID = ModelsManager.Instance.TrackModel(this);
 
-        Rigidbody rigid = editingModel.AddComponent<Rigidbody>();
+        Rigidbody rigid = editingModel.gameObject.AddComponent<Rigidbody>();
         rigid.isKinematic = true;
 
-        interactable = editingModel.AddComponent<XRGrabInteractable>();
-        grabTransform = editingModel.AddComponent<SnappingGrabTransformer>();
+        interactable = editingModel.gameObject.AddComponent<XRGrabInteractable>();
+        grabTransform = editingModel.gameObject.AddComponent<SnappingGrabTransformer>();
         interactable.selectEntered.AddListener(OnGrab);
         interactable.throwOnDetach = false;
 

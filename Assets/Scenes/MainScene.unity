@@ -8225,12 +8225,12 @@ MonoBehaviour:
   editModeToggleGroup: {fileID: 966443880}
   transformTypeToggleGroup: {fileID: 224319401}
   gizmoSpaceToggleGroup: {fileID: 837497815}
+  moveSnappingPanel: {fileID: 0}
+  rotateSnappingPanel: {fileID: 0}
+  scaleSnappingPanel: {fileID: 0}
   moveSnapToggleGroup: {fileID: 1770820085}
   rotateSnapToggleGroup: {fileID: 2030381945}
   scaleSnapToggleGroup: {fileID: 954135157}
-  currentEditMode: 2
-  currentGizmoSpace: 0
-  currentTransformType: 1
   snappingOptions:
   - {fileID: 323122468}
   - {fileID: 1770820083}
@@ -8238,56 +8238,6 @@ MonoBehaviour:
   - {fileID: 2030381943}
   - {fileID: 582860515}
   - {fileID: 954135155}
-  showSnap: 0
-  editModeOptions:
-  - Object
-  - Vertex
-  - Edge
-  - Face
-  transformTypeOptions:
-  - Select
-  - Free
-  - Move
-  - Rotate
-  - Scale
-  gizmoSpaceOptions:
-  - World
-  - Local
-  moveSnapOptions:
-  - None
-  - 1cm
-  - 10cm
-  - 1m
-  moveSnapValues:
-  - 0
-  - 0.01
-  - 0.1
-  - 1
-  rotateSnapOptions:
-  - None
-  - "5\xB0"
-  - "15\xB0"
-  - "45\xB0"
-  rotateSnapValues:
-  - 0
-  - 5
-  - 15
-  - 45
-  scaleSnapOptions:
-  - None
-  - 10%
-  - 50%
-  - 100%
-  scaleSnapValues:
-  - 0
-  - 0.1
-  - 0.5
-  - 1
-  moveSnappingPanel: {fileID: 0}
-  rotateSnappingPanel: {fileID: 0}
-  scaleSnappingPanel: {fileID: 0}
-  controlPointSize: 0.05
-  selectedControlPoints: []
 --- !u!114 &388215100
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30163,8 +30113,6 @@ MonoBehaviour:
   - {fileID: 81839487}
   - {fileID: 210337953}
   - {fileID: 1082846061}
-  previousPosition: {x: 0, y: 0, z: 0}
-  currentAxis: -1
   axesLineRenders:
   - {fileID: 81839489}
   - {fileID: 210337955}
@@ -30186,7 +30134,6 @@ MonoBehaviour:
   transformInfoPanel: {fileID: 80407852}
   infoTitle: {fileID: 1577102046}
   infoValue: {fileID: 1252415602}
-  isReset: 0
 --- !u!4 &1503378181
 Transform:
   m_ObjectHideFlags: 0
@@ -39894,14 +39841,6 @@ MonoBehaviour:
   m_MinimumScaleRatio: 0.25
   m_MaximumScaleRatio: 2
   m_ScaleMultiplier: 0.25
-  m_SnapToGrid: 1
-  snapSpace: 0
-  m_GridSize: 0.5
-  m_SnapToAngle: 1
-  m_SnapAngle: 45
-  m_SnapToScale: 1
-  m_ScaleIncrement: 0.25
-  isSetup: 0
 --- !u!135 &1991195043
 SphereCollider:
   m_ObjectHideFlags: 0
