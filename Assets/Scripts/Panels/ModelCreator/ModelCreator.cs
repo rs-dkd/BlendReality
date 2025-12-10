@@ -88,8 +88,21 @@ public class ModelCreator : MonoBehaviour
         zSubDivisionSlider.OnSliderValueChangedEvent.AddListener(SubDSliderUpdated);
 
         PanelManager.Instance.OnPanelChanged.AddListener(PanelChanged);
+        SelectionManager.Instance.OnSelectionChanged.AddListener(SelectionChanged);
 
         UniformSizeToggleChanged();
+    }
+
+    /// <summary>
+    /// If changed to the edit panel - finalize the model
+    /// </summary>
+    public void SelectionChanged(List<ModelData> models)
+    {
+        if(currentModel != null && models.Count == 0)
+        {
+            FinalizeLastModel();
+        }
+            
     }
 
     /// <summary>
@@ -934,9 +947,8 @@ public class ModelCreator : MonoBehaviour
 
         return mesh;
     }
-
     /// <summary>
-    /// Generate a properly welded plane
+    /// Generate a properly welded plane 
     /// </summary>
     private ProBuilderMesh GenerateWeldedPlane(float width, float depth, int widthSegments, int depthSegments)
     {
@@ -971,8 +983,8 @@ public class ModelCreator : MonoBehaviour
                 int v2 = (z + 1) * (widthSegments + 1) + x + 1;
                 int v3 = (z + 1) * (widthSegments + 1) + x;
 
-                faces.Add(new Face(new int[] { v0, v1, v2 }));
-                faces.Add(new Face(new int[] { v0, v2, v3 }));
+                faces.Add(new Face(new int[] { v0, v2, v1 }));
+                faces.Add(new Face(new int[] { v0, v3, v2 }));
             }
         }
 

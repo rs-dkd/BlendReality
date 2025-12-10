@@ -346,8 +346,9 @@ public class MeshImporter : MonoBehaviour
             {
                 proBuilderMesh.textures = mesh.uv;
             }
-
+            proBuilderMesh.sharedVertices = SharedVertex.GetSharedVerticesWithPositions(proBuilderMesh.positions);
             proBuilderMesh.ToMesh();
+            proBuilderMesh.Refresh();
         }
         catch (System.Exception e)
         {
@@ -356,13 +357,12 @@ public class MeshImporter : MonoBehaviour
             return;
         }
 
-        // --- Smart Spawn Calculation ---
 
-        // 1. Calculate the object's physical footprint radius
+        //Calculate the object's physical footprint radius
         mesh.RecalculateBounds();
         float objectRadius = Mathf.Max(mesh.bounds.extents.x, mesh.bounds.extents.z);
 
-        // 2. Find the lowest point (feet) for floor alignment
+        //Find the lowest point for floor alignment
         float minLocalY = float.MaxValue;
         if (mesh.vertices.Length > 0)
         {
@@ -376,7 +376,7 @@ public class MeshImporter : MonoBehaviour
             minLocalY = 0f;
         }
 
-        // 3. Get User's Head Position and Forward Vector
+        //Get User's Head Position and Forward Vector
         Vector3 spawnOrigin = Vector3.zero;
         Vector3 flatForward = Vector3.forward;
 
@@ -385,32 +385,31 @@ public class MeshImporter : MonoBehaviour
             Transform cam = Camera.main.transform;
             spawnOrigin = cam.position;
 
-            // Project forward vector onto the floor (ignore looking up/down)
+            //Project forward vector onto the floor 
             flatForward = Vector3.ProjectOnPlane(cam.forward, Vector3.up).normalized;
             if (flatForward == Vector3.zero) flatForward = Vector3.forward;
         }
 
-        // 4. Calculate Safe Spawn Position (User position + Object radius + Buffer)
+        //Calculate Safe Spawn Position 
         float userPersonalSpace = 0.5f;
-        float spawnDistance = userPersonalSpace + objectRadius + 1.0f; // Add 1m extra buffer
+        float spawnDistance = userPersonalSpace + objectRadius + 1.0f; 
 
         Vector3 spawnPos = spawnOrigin + (flatForward * spawnDistance);
 
-        // 5. Snap to Floor
+        //Snap to Floor
         spawnPos.y = -minLocalY;
 
-        // Create ModelData model from the data
+        //Create ModelData model from the data
         GameObject myObject = new GameObject();
         ModelData modelData = myObject.AddComponent<ModelData>();
 
-        // Pass calculated spawn position
+        //Pass calculated spawn position
         modelData.SetupModel(proBuilderMesh, spawnPos, name);
 
-        // Integrate quad topology if available
+        //Integrate quad topology if available
         if (preserveQuadTopology && quadData != null && QuadTopologyManager.Instance != null)
         {
-            // Update Quad Data to match the new World Position
-            // This ensures PnS library coordinates match the visual mesh
+            //Update Quad Data to match the new World Position
             if (spawnPos != Vector3.zero)
             {
                 for (int i = 0; i < quadData.vertices.Count; i++)

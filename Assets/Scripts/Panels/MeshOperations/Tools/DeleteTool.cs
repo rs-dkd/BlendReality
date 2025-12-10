@@ -1,188 +1,203 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 
 /// <summary>
-/// Delete
-/// Can delete faces, edges, verts, and objects
+/// Delete Tool
+/// Manually reconstructs the face list to avoid topology crashes.
+/// Automatically deletes the GameObject if no geometry remains.
 /// </summary>
 public class DeleteTool : OperationTool
 {
-
-
-
-    /// <summary>
-    /// Always can show tool
-    /// </summary>
     public override bool CanShowTool()
     {
         return true;
     }
-    /// <summary>
-    /// Cant perform tool if object and no objs selected or if (face, vert, edge) and no control points selected
-    /// </summary>
+
     public override bool CanPerformTool()
     {
-        if (
-            (ModelEditingPanel.Instance.GetEditMode() == EditMode.Object && SelectionManager.Instance.GetSelectedModels().Count == 0) ||
-            ((ModelEditingPanel.Instance.GetEditMode() == EditMode.Vertex || ModelEditingPanel.Instance.GetEditMode() == EditMode.Edge || ModelEditingPanel.Instance.GetEditMode() == EditMode.Face)
-            && ModelEditingPanel.Instance.GetControlPoints().Count == 0)
-            )
-        {
+        // Check Object Mode selection
+        if (ModelEditingPanel.Instance.GetEditMode() == EditMode.Object &&
+            SelectionManager.Instance.GetSelectedModels().Count == 0)
             return false;
-        }
-        else
-        {
-            return true;
-        }
+
+        // Check Element Mode selection
+        if ((ModelEditingPanel.Instance.GetEditMode() != EditMode.Object) &&
+            ModelEditingPanel.Instance.GetControlPoints().Count == 0)
+            return false;
+
+        return true;
     }
 
-
     /// <summary>
-    /// Based on editModel preform correct delete operation
+    /// Entry point for the tool
     /// </summary>
     public void DeleteSelectedElements()
     {
-        //check if can preform the tool
-        if (CanPerformTool() == false) return;
-
-
+        if (!CanPerformTool()) return;
 
         EditMode editMode = ModelEditingPanel.Instance.GetEditMode();
-        //Delete selected objects
+
         if (editMode == EditMode.Object)
         {
             List<ModelData> models = SelectionManager.Instance.GetSelectedModels();
-
             for (int i = models.Count - 1; i >= 0; i--)
             {
                 models[i].DeleteModel();
             }
-
             SelectionManager.Instance.ClearSelection();
-
         }
-        //Delete selected verts
-        else if(editMode == EditMode.Vertex)
+        else
         {
             ModelData model = SelectionManager.Instance.GetFirstSelected();
             ProBuilderMesh pbMesh = model.GetEditModel();
-            List<BaseControlPoint> selectedControlPoints = ModelEditingPanel.Instance.GetControlPoints();
-            DeleteVertices(pbMesh, selectedControlPoints);
-            model.UpdateMeshEdit();
-            ModelEditingPanel.Instance.UpdateEditModel();
-        }
-        //Delete selected edges
-        else if (editMode == EditMode.Edge)
-        {
-            ModelData model = SelectionManager.Instance.GetFirstSelected();
-            ProBuilderMesh pbMesh = model.GetEditModel();
-            List<BaseControlPoint> selectedControlPoints = ModelEditingPanel.Instance.GetControlPoints();
-            DeleteEdges(pbMesh, selectedControlPoints);
-            model.UpdateMeshEdit();
-            ModelEditingPanel.Instance.UpdateEditModel();
-        }
-        //Delete selected faces
-        else if (editMode == EditMode.Face)
-        {
-            ModelData model = SelectionManager.Instance.GetFirstSelected();
-            ProBuilderMesh pbMesh = model.GetEditModel();
-            List<BaseControlPoint> selectedControlPoints = ModelEditingPanel.Instance.GetControlPoints();
-            DeleteFaces(pbMesh, selectedControlPoints);
-            model.UpdateMeshEdit();
-            ModelEditingPanel.Instance.UpdateEditModel();
-        }
+            List<BaseControlPoint> selection = ModelEditingPanel.Instance.GetControlPoints();
 
-
-
-
-    }
-
-    /// <summary>
-    /// Deletes selected faces
-    /// </summary>
-    private void DeleteFaces(ProBuilderMesh pbMesh, List<BaseControlPoint> selectedFaceControlPoints)
-    {
-        List<Face> faces = new List<Face>();
-        for (int i = 0; i < selectedFaceControlPoints.Count; i++)
-        {
-            faces.Add(((FaceControlPoint)selectedFaceControlPoints[i]).GetFace());
-        }
-
-
-        if (faces.Any())
-        {
-            pbMesh.DeleteFaces(faces);
-            pbMesh.ToMesh();
-            pbMesh.Refresh();
-        }
-    }
-    /// <summary>
-    /// Deletes selected edges and their faces
-    /// </summary>
-    private void DeleteEdges(ProBuilderMesh pbMesh, List<BaseControlPoint> selectedEdgesControlPoints)
-    {
-        var verticesToDelete = new HashSet<int>(selectedEdgesControlPoints.SelectMany(cp =>
-        {
-
-            return ((EdgeControlPoint)cp).GetEdgeVerts();
-        }));
-
-        if (!verticesToDelete.Any()) return;
-
-        var facesToDelete = new List<Face>();
-        foreach (var face in pbMesh.faces)
-        {
-            if (face.indexes.Any(vertexIndex => verticesToDelete.Contains(vertexIndex)))
+            if (editMode == EditMode.Vertex)
             {
-                facesToDelete.Add(face);
+                DeleteVerticesManual(model, pbMesh, selection);
+            }
+            else if (editMode == EditMode.Edge)
+            {
+                DeleteEdgesManual(model, pbMesh, selection);
+            }
+            else if (editMode == EditMode.Face)
+            {
+                DeleteFacesManual(model, pbMesh, selection);
+            }
+
+            //Only update if the model wasn't destroyed
+            if (model != null && model.gameObject != null)
+            {
+                model.UpdateMeshEdit();
+                ModelEditingPanel.Instance.UpdateEditModel();
+            }
+        }
+    }
+
+    private void DeleteFacesManual(ModelData model, ProBuilderMesh pbMesh, List<BaseControlPoint> selectedPoints)
+    {
+        HashSet<Face> facesToDelete = new HashSet<Face>();
+        foreach (var cp in selectedPoints)
+        {
+            facesToDelete.Add(((FaceControlPoint)cp).GetFace());
+        }
+
+        PerformManualRebuild(model, pbMesh, facesToDelete);
+    }
+
+    private void DeleteEdgesManual(ModelData model, ProBuilderMesh pbMesh, List<BaseControlPoint> selectedPoints)
+    {
+        HashSet<Face> facesToDelete = new HashSet<Face>();
+
+        //Iterate through each selected edge individually
+        foreach (var cp in selectedPoints)
+        {
+            EdgeControlPoint edgeCP = (EdgeControlPoint)cp;
+
+            //Get the two vertices that define this specific edge
+            List<int> specificEdgeVerts = edgeCP.GetEdgeVerts().ToList();
+
+            if (specificEdgeVerts.Count < 2) continue;
+
+            //Find faces that contain both vertices of this edge
+            foreach (var face in pbMesh.faces)
+            {
+                bool containsV1 = face.distinctIndexes.Contains(specificEdgeVerts[0]);
+                bool containsV2 = face.distinctIndexes.Contains(specificEdgeVerts[1]);
+
+                if (containsV1 && containsV2)
+                {
+                    facesToDelete.Add(face);
+                }
             }
         }
 
-
-
-        if (facesToDelete.Any())
-        {
-            pbMesh.DeleteFaces(facesToDelete);
-            pbMesh.ToMesh();
-            pbMesh.Refresh();
-
-        }
+        PerformManualRebuild(model, pbMesh, facesToDelete);
     }
-    /// <summary>
-    /// Deletes selected verts and their faces
-    /// </summary>
-    private void DeleteVertices(ProBuilderMesh pbMesh, List<BaseControlPoint> selectedVertexControlPoints)
+
+    private void DeleteVerticesManual(ModelData model, ProBuilderMesh pbMesh, List<BaseControlPoint> selectedPoints)
     {
-        var verticesToDelete = new HashSet<int>(selectedVertexControlPoints.SelectMany(cp =>
+        HashSet<int> vertIndices = new HashSet<int>();
+        foreach (var cp in selectedPoints)
         {
-            
-            return ((VertexControlPoint)cp).GetVerts();
-        }));
+            vertIndices.UnionWith(((VertexControlPoint)cp).GetVerts());
+        }
 
-        if (!verticesToDelete.Any()) return;
+        HashSet<Face> facesToDelete = GetFacesTouchingVerts(pbMesh, vertIndices);
+        PerformManualRebuild(model, pbMesh, facesToDelete);
+    }
 
-        var facesToDelete = new List<Face>();
+    private void PerformManualRebuild(ModelData model, ProBuilderMesh pbMesh, HashSet<Face> facesToDelete)
+    {
+        if (facesToDelete.Count == 0) return;
+
+        List<Face> remainingFaces = new List<Face>();
+
         foreach (var face in pbMesh.faces)
         {
-            if (face.indexes.Any(vertexIndex => verticesToDelete.Contains(vertexIndex)))
+            if (!facesToDelete.Contains(face))
             {
-                facesToDelete.Add(face);
+                remainingFaces.Add(face);
             }
         }
 
-
-
-        if (facesToDelete.Any())
+        if (remainingFaces.Count == 0)
         {
-            pbMesh.DeleteFaces(facesToDelete);
+            DeleteModelSafely(model);
+            return;
+        }
+
+        pbMesh.faces = remainingFaces;
+
+        pbMesh.RemoveUnusedVertices();
+
+  
+        if (pbMesh.vertexCount < 3)
+        {
+            DeleteModelSafely(model);
+            return;
+        }
+
+        try
+        {
             pbMesh.ToMesh();
             pbMesh.Refresh();
-
+        }
+        catch (System.Exception e)
+        {
+            DeleteModelSafely(model);
         }
     }
 
+    /// <summary>
+    /// Helper to ensure we don't try to access a destroyed object
+    /// </summary>
+    private void DeleteModelSafely(ModelData model)
+    {
+        SelectionManager.Instance.ClearSelection();
+        if (model != null)
+        {
+            model.DeleteModel();
+        }
+    }
+
+    /// <summary>
+    /// Helper: Finds all faces that use any of the provided vertex indices
+    /// </summary>
+    private HashSet<Face> GetFacesTouchingVerts(ProBuilderMesh pbMesh, HashSet<int> vertIndices)
+    {
+        HashSet<Face> touchedFaces = new HashSet<Face>();
+
+        foreach (var face in pbMesh.faces)
+        {
+            if (face.distinctIndexes.Any(i => vertIndices.Contains(i)))
+            {
+                touchedFaces.Add(face);
+            }
+        }
+        return touchedFaces;
+    }
 }
-
-

@@ -216,7 +216,15 @@ public class ViewManager : MonoBehaviour
     private static readonly int MinorGridSizeID = Shader.PropertyToID("_GridSize");
     private static readonly int GridCenterID = Shader.PropertyToID("_GridCenter");
 
+    private void Start()
+    {
+        OnControlPointSizeChanged.Invoke(controlPointSize);
+        currentShadingType = ShadingType.HiddenLine;
+        OnShadingChanged.Invoke();
+        unitSystem = GridUnitSystem.Imperial;
+        OnUnitSystemSizeChanged.Invoke(unitSystem);
 
+    }
 
 
     /// <summary>

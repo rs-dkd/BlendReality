@@ -3,10 +3,12 @@ using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.ProBuilder.MeshOperations;
 using UnityEngine.UI;
+using System.Linq;
 
 /// <summary>
 /// Weld Tool
-/// Welds selected (faces,edges,verts) vertices together. Also can combine selected objects into a single object
+/// Welds selected (faces,edges,verts) vertices together. 
+/// Automatically deletes objects if the weld results in invalid geometry 
 /// </summary>
 public class WeldTool : OperationTool
 {
@@ -18,18 +20,12 @@ public class WeldTool : OperationTool
     [Tooltip("Weld by distance toggle")]
     [SerializeField] private Toggle distToggle;
 
-    /// <summary>
-    /// Setup listener for the editMode (if obj or else)
-    /// </summary>
     private void Start()
     {
         ModelEditingPanel.Instance.OnEditModeChanged.AddListener(OnEditModeChanged);
         OnEditModeChanged();
     }
 
-    /// <summary>
-    /// If obj hide the weld by distance
-    /// </summary>
     public void OnEditModeChanged()
     {
         if (ModelEditingPanel.Instance.GetEditMode() == EditMode.Object)
@@ -43,129 +39,158 @@ public class WeldTool : OperationTool
             ToggleDist();
         }
     }
-    /// <summary>
-    /// Called from the Distance Toggle to show hide the slider
-    /// </summary>
+
     public void ToggleDist()
     {
-        if (distToggle.isOn)
-        {
-            distSlider.gameObject.SetActive(true);
-        }
-        else
-        {
-            distSlider.gameObject.SetActive(false);
-        }
+        distSlider.gameObject.SetActive(distToggle.isOn);
     }
-    /// <summary>
-    /// Called from the weld button 
-    /// Welds verts, edges, faces or combines objects
-    /// </summary>
+
     public void Weld()
     {
-        //Check if can preform the tool
+        //Check if can perform the tool
         if (CanPerformTool() == false) return;
 
-        //If object mode combine the objects into a single object
         if (ModelEditingPanel.Instance.GetEditMode() == EditMode.Object)
         {
-            List<ModelData> models = SelectionManager.Instance.GetSelectedModels();
+            List<ModelData> models = new List<ModelData>(SelectionManager.Instance.GetSelectedModels());
+
+            if (models.Count < 2) return;
+
             List<ProBuilderMesh> meshes = new List<ProBuilderMesh>();
-            foreach(ModelData model in models)
+            foreach (ModelData model in models)
             {
                 ProBuilderMesh pbm = model.GetEditModel();
-                if(pbm != null)
+                if (pbm != null)
                 {
                     meshes.Add(pbm);
                 }
             }
 
+            //Combine everything into the first model
             CombineMeshes.Combine(meshes, models[0].GetEditModel());
 
+            //Validate the result immediately
+            //If the combine failed or created bad geo, this will clean it up
+            ValidateAndRefreshMesh(models[0]);
+
             //Delete old models
-            for(int x = 1; x < models.Count; x++)
+            for (int x = 1; x < models.Count; x++)
             {
-                models[x].DeleteModel();
+                DeleteModelSafely(models[x]);
+            }
+
+            //Reselect the combined model if it survived validation
+            if (models[0] != null)
+            {
+                SelectionManager.Instance.ClearSelection();
+                models[0].SelectModel();
             }
         }
         else
         {
-            //Threshold to weld the verts
-            float threshold = 100000f;
+            float threshold = 100000f; //Default high threshold implies "weld everything selected"
             if (distToggle.isOn)
             {
                 threshold = distSlider.GetValueAsFloat();
             }
 
-            //Get verts from verts, edges, faces
             List<BaseControlPoint> points = ModelEditingPanel.Instance.GetControlPoints();
             List<int> allVertices = new List<int>();
+
             foreach (var point in points)
             {
-                Debug.Log(point);
-                Debug.Log(point.GetType());
                 List<int> pointVerts = new List<int>();
                 if (ModelEditingPanel.Instance.GetEditMode() == EditMode.Vertex) pointVerts = ((VertexControlPoint)point).GetVerts();
                 else if (ModelEditingPanel.Instance.GetEditMode() == EditMode.Edge) pointVerts = ((EdgeControlPoint)point).GetEdgeVerts();
                 else if (ModelEditingPanel.Instance.GetEditMode() == EditMode.Face) pointVerts = ((FaceControlPoint)point).GetFaceVerts();
-                else return;
+                else continue;
 
                 foreach (int v in pointVerts)
                 {
-                    if (!allVertices.Contains(v))
-                    {
-                        allVertices.Add(v);
-                    }
+                    if (!allVertices.Contains(v)) allVertices.Add(v);
                 }
             }
 
-            //Get mesh
-            ProBuilderMesh mesh = SelectionManager.Instance.GetFirstSelected().GetEditModel();
+            ModelData targetModel = SelectionManager.Instance.GetFirstSelected();
+            if (targetModel == null) return;
 
-            if (mesh == null)
-            {
-                Debug.LogError("No ProBuilderMesh selected or available for welding.");
-                return;
-            }
+            ProBuilderMesh mesh = targetModel.GetEditModel();
+            if (mesh == null) return;
 
+            //Perform the Weld
+            VertexEditing.WeldVertices(mesh, allVertices, threshold);
 
-            //Weld verts
-            int[] newVertices = VertexEditing.WeldVertices(
-                mesh,
-                allVertices,
-                threshold
-            );
-
-            //Refrech mesh
-            mesh.ToMesh();
-            SelectionManager.Instance.GetFirstSelected().UpdateMeshEdit();
-            ModelEditingPanel.Instance.UpdateEditModel();
+            //Validate the result
+            //If the weld collapsed the mesh into a single point, this will delete the object safely
+            ValidateAndRefreshMesh(targetModel);
         }
     }
 
+
     /// <summary>
-    /// Always true
+    /// Checks if the mesh is valid after an operation. 
+    /// Explicitly removes collapsed geometry before updating the collider.
     /// </summary>
+    private void ValidateAndRefreshMesh(ModelData model)
+    {
+        if (model == null) return;
+        ProBuilderMesh mesh = model.GetEditModel();
+        if (mesh == null) return;
+
+        mesh.RemoveUnusedVertices();
+
+        UnityEngine.ProBuilder.MeshOperations.MeshValidation.RemoveDegenerateTriangles(mesh);
+
+ 
+        mesh.faces = mesh.faces.Where(f => f.indexes.Count > 0).ToList();
+
+        mesh.RemoveUnusedVertices();
+
+ 
+        if (mesh.faceCount == 0 || mesh.vertexCount < 3)
+        {
+            DeleteModelSafely(model);
+            return;
+        }
+
+        try
+        {
+            mesh.ToMesh();
+            mesh.Refresh();
+
+            model.UpdateMeshEdit();
+            ModelEditingPanel.Instance.UpdateEditModel();
+        }
+        catch (System.Exception e)
+        {
+            DeleteModelSafely(model);
+        }
+    }
+
+    private void DeleteModelSafely(ModelData model)
+    {
+        if (model != null)
+        {
+            //Ensure we don't leave a ghost selection reference
+            SelectionManager.Instance.RemoveModelFromSelection(model);
+            model.DeleteModel();
+        }
+    }
+
     public override bool CanShowTool()
     {
         return true;
     }
-    /// <summary>
-    /// Only if object and has objects selected or (vert, edge, face) and has control points selected
-    /// </summary>
+
     public override bool CanPerformTool()
     {
-        if (
-            (ModelEditingPanel.Instance.GetEditMode() == EditMode.Object && SelectionManager.Instance.GetSelectedModels().Count <= 1) ||
-            ((ModelEditingPanel.Instance.GetEditMode() == EditMode.Vertex || ModelEditingPanel.Instance.GetEditMode() == EditMode.Edge || ModelEditingPanel.Instance.GetEditMode() == EditMode.Face)
-            && ModelEditingPanel.Instance.GetControlPoints().Count == 0)
-            )
+        if (ModelEditingPanel.Instance.GetEditMode() == EditMode.Object)
         {
-            return false;
+            return SelectionManager.Instance.GetSelectedModels().Count > 1;
         }
         else
         {
-            return true;
+            return ModelEditingPanel.Instance.GetControlPoints().Count > 0;
         }
     }
 }
